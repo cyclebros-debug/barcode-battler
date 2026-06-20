@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>バーコードバトラー</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+  :root {
+    --lcd-bg: #8bac0f;
+    --lcd-dark: #0f380f;
+    --lcd-mid: #306230;
+    --lcd-light: #9bbc0f;
+    --body-bg: #c8b87a;
+    --plastic-dark: #5a4a2a;
+    --plastic-mid: #8a7040;
+    --btn-red: #cc2200;
+    --btn-blue: #002299;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #2a2a2a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px 10px;
+    font-family: 'VT323', monospace;
+  }
+
+  .device {
+    background: linear-gradient(160deg, var(--body-bg) 0%, #b0a060 50%, #8a7540 100%);
+    border-radius: 18px 18px 40px 40px;
+    width: 340px;
+    padding: 18px 18px 30px;
+    box-shadow:
+      inset 0 2px 4px rgba(255,255,255,0.4),
+      inset 0 -4px 8px rgba(0,0,0,0.3),
+      0 8px 30px rgba(0,0,0,0.6);
+    position: relative;
+  }
+
+  .device-top {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .brand {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--plastic-dark);
+    letter-spacing: 2px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  .lcd-frame {
+    background: var(--plastic-dark);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow:
+      inset 0 3px 8px rgba(0,0,0,0.8),
+      0 2px 4px rgba(255,255,255,0.2);
+    margin-bottom: 16px;
+  }
+
+  .lcd {
+    background: var(--lcd-bg);
+    border-radius: 4px;
+    padding: 10px;
+    min-height: 200px;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0,60,0,0.3);
+    overflow: hidden;
+  }
+
+  .lcd::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,30,0,0.08) 3px,
+      rgba(0,30,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .lcd-text {
+    color: var(--lcd-dark);
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 1.3;
+    position: relative;
+    z-index: 1;
+  }
+
+  .lcd-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--lcd-dark);
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 3px 0;
+    font-size: 18px;
+  }
+
+  .stat-label {
+    width: 32px;
+    font-size: 16px;
+    color: var(--lcd-dark);
+  }
+
+  .stat-pip-row {
+    display: flex;
+    gap: 2px;
+  }
+
+  .pip {
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--lcd-mid);
+    background: transparent;
+  }
+
+  .pip.filled {
+    background: var(--lcd-dark);
+  }
+
+  .stat-num {
+    font-size: 18px;
+    color: var(--lcd-dark);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  /* カメラビュー */
+  #camera-area {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+    background: #000;
+    border-radius: 4px;
+    display: none;
+  }
+
+  #camera-area video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #camera-area canvas {
+    display: none;
+  }
+
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: rgba(139,172,15,0.8);
+    animation: scan 1.5s linear infinite;
+    z-index: 5;
+    box-shadow: 0 0 6px rgba(139,172,15,0.9);
+  }
+
+  @keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+
+  .scan-corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--lcd-bg);
+    border-style: solid;
+    z-index: 6;
+  }
+  .scan-corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+  .scan-corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+  .scan-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+  .scan-corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+  /* メッセージ表示エリア */
+  #msg-area {
+    font-size: 18px;
+    color: var(--lcd-dark);
+    min-height: 60px;
+  }
+
+  #msg-area .hero-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: 0;
+  }
+
+  /* バトルアニメ */
+  .battle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 6px 0;
+  }
+
+  .fighter-sprite {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .vs-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--lcd-dark);
+    animation: blink 0.5s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .hp-row {
+    font-size: 16px;
+    color: var(--lcd-dark);
+    margin: 2px 0;
+  }
+
+  /* ボタンエリア */
+  .buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 10px 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0;
+    line-height: 1.4;
+    text-align: center;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow:
+      inset 0 1px 2px rgba(255,255,255,0.3),
+      0 4px 0 rgba(0,0,0,0.4);
+  }
+
+  .btn:active {
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 1px 2px rgba(255,255,255,0.3),
+      0 1px 0 rgba(0,0,0,0.4);
+  }
+
+  .btn-scan {
+    background: linear-gradient(180deg, #e83030 0%, var(--btn-red) 100%);
+    color: #fff;
+  }
+
+  .btn-battle {
+    background: linear-gradient(180deg, #3050ee 0%, var(--btn-blue) 100%);
+    color: #fff;
+  }
+
+  .btn-reset {
+    background: linear-gradient(180deg, #556 0%, #334 100%);
+    color: #aab;
+    grid-column: span 2;
+    font-size: 6px;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* スキャナーモジュール */
+  .scanner-slot {
+    background: var(--plastic-dark);
+    border-radius: 4px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
+  }
+
+  .slot-lines {
+    display: flex;
+    gap: 2px;
+  }
+
+  .slot-line {
+    width: 2px;
+    height: 20px;
+    background: #111;
+  }
+
+  .slot-line:nth-child(odd) { height: 16px; }
+
+  .slot-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: #665533;
+    letter-spacing: 1px;
+  }
+
+  /* プレイヤー表示 */
+  .players-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .player-card {
+    background: rgba(0,30,0,0.2);
+    border: 1px solid var(--lcd-mid);
+    border-radius: 3px;
+    padding: 6px;
+    font-size: 15px;
+    color: var(--lcd-dark);
+  }
+
+  .player-card .pname {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    display: block;
+    margin-bottom: 4px;
+    color: var(--lcd-dark);
+  }
+
+  .result-banner {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    text-align: center;
+    color: var(--lcd-dark);
+    padding: 6px;
+    animation: blink 0.4s step-end infinite;
+    letter-spacing: 1px;
+  }
+
+  .hidden { display: none !important; }
+
+  #screen-idle, #screen-scan, #screen-ready, #screen-battle, #screen-result {
+    display: none;
+  }
+
+  #screen-idle { display: block; }
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="device-top">
+    <div class="brand">★ BARCODE BATTLER ★</div>
+  </div>
+
+  <div class="lcd-frame">
+    <div class="lcd">
+
+      <!-- アイドル画面 -->
+      <div id="screen-idle">
+        <div class="lcd-title">- READY -</div>
+        <div class="lcd-text" style="text-align:center; margin-top:20px; font-size:22px;">
+          バーコードを<br>スキャンして<br>せんしを<br>よびだせ！
+        </div>
+        <div style="text-align:center; margin-top:16px; font-size:28px;">⚔️</div>
+      </div>
+
+      <!-- スキャン画面 -->
+      <div id="screen-scan">
+        <div class="lcd-title" id="scan-title">P1 スキャン中...</div>
+        <div id="camera-area">
+          <div class="scan-line"></div>
+          <div class="scan-corner tl"></div>
+          <div class="scan-corner tr"></div>
+          <div class="scan-corner bl"></div>
+          <div class="scan-corner br"></div>
+        </div>
+        <div id="scan-msg" class="lcd-text" style="margin-top:8px; font-size:17px;">
+          バーコードを<br>カメラに向けて
+        </div>
+      </div>
+
+      <!-- 準備完了画面 -->
+      <div id="screen-ready">
+        <div class="lcd-title">- WARRIORS -</div>
+        <div class="players-grid">
+          <div class="player-card" id="p1-card">
+            <span class="pname">PLAYER 1</span>
+            <span id="p1-name-disp"></span><br>
+            HP:<span id="p1-hp-disp"></span><br>
+            AT:<span id="p1-at-disp"></span><br>
+            DF:<span id="p1-df-disp"></span>
+          </div>
+          <div class="player-card" id="p2-card">
+            <span class="pname">PLAYER 2</span>
+            <span id="p2-name-disp">???</span><br>
+            HP:---<br>
+            AT:---<br>
+            DF:---
+          </div>
+        </div>
+        <div id="ready-msg" class="lcd-text" style="font-size:17px;">P2のバーコードを<br>スキャンせよ！</div>
+      </div>
+
+      <!-- バトル画面 -->
+      <div id="screen-battle">
+        <div class="battle-row">
+          <div>
+            <div class="fighter-sprite" id="b-p1-icon">🗡️</div>
+            <div style="font-size:14px; color:var(--lcd-dark)" id="b-p1-name"></div>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div style="text-align:right">
+            <div class="fighter-sprite" id="b-p2-icon">🛡️</div>
+            <div style="font-size:14px; color:var(--lcd-dark)" id="b-p2-name"></div>
+          </div>
+        </div>
+        <div class="hp-row">HP: <span id="b-p1-hp"></span> / <span id="b-p2-hp"></span></div>
+        <div id="battle-log" class="lcd-text" style="font-size:17px; min-height:70px;"></div>
+      </div>
+
+      <!-- 結果画面 -->
+      <div id="screen-result">
+        <div id="result-banner" class="result-banner"></div>
+        <div id="result-detail" class="lcd-text" style="font-size:17px; margin-top:8px;"></div>
+      </div>
+
+    </div><!-- /lcd -->
+  </div><!-- /lcd-frame -->
+
+  <div class="scanner-slot">
+    <div class="slot-lines">
+      <div class="slot-line"></div><div class="slot-line"></div>
+      <div class="slot-line"></div><div class="slot-line"></div>
+      <div class="slot-line"></div><div class="slot-line"></div>
+      <div class="slot-line"></div>
+    </div>
+    <div class="slot-label">SCAN SLOT</div>
+    <div class="slot-lines">
+      <div class="slot-line"></div><div class="slot-line"></div>
+      <div class="slot-line"></div><div class="slot-line"></div>
+      <div class="slot-line"></div><div class="slot-line"></div>
+      <div class="slot-line"></div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button class="btn btn-scan" id="btn-scan" onclick="startScan()">📷 SCAN<br>P1</button>
+    <button class="btn btn-battle" id="btn-battle" onclick="startBattle()" disabled>⚔️ BATTLE<br>START</button>
+    <button class="btn btn-reset" onclick="resetGame()">↺ RESET</button>
+  </div>
+
+</div>
+
+<script>
+// ===== ゲームステート =====
+let players = [null, null];
+let currentPlayer = 0;
+let scanning = false;
+let quaggaRunning = false;
+
+const NAMES = [
+  'ドラゴン','フェニックス','ウルフ','タイガー','イーグル',
+  'シャーク','レオン','ゼウス','ライジン','サムライ',
+  'ニンジャ','グリフォン','ゴーレム','スフィンクス','キメラ',
+  'バジリスク','ケルベロス','ミノタウロス','ユニコーン','リヴァイアサン'
+];
+
+// バーコード数字からステータス生成
+function calcStats(code) {
+  const digits = code.replace(/\D/g, '');
+  if (digits.length < 6) return null;
+
+  let hp = 0, at = 0, df = 0, sp = 0;
+  for (let i = 0; i < digits.length; i++) {
+    const d = parseInt(digits[i]);
+    if (i % 4 === 0) hp += d;
+    else if (i % 4 === 1) at += d;
+    else if (i % 4 === 2) df += d;
+    else sp += d;
+  }
+
+  // 正規化（HP:50-200, AT:10-50, DF:5-30）
+  const seed = parseInt(digits.slice(0,4));
+  hp = 50 + (hp * 7 + seed % 30) % 151;
+  at = 10 + (at * 3 + seed % 15) % 41;
+  df = 5  + (df * 2 + seed % 10) % 26;
+
+  const nameIdx = (parseInt(digits.slice(-3)) + seed) % NAMES.length;
+  const name = NAMES[nameIdx];
+
+  return { name, hp, maxHp: hp, at, df, code };
+}
+
+// ===== 画面切替 =====
+function showScreen(id) {
+  ['screen-idle','screen-scan','screen-ready','screen-battle','screen-result']
+    .forEach(s => document.getElementById(s).style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+}
+
+// ===== スキャン開始 =====
+function startScan() {
+  if (scanning) return;
+  currentPlayer = players[0] ? 1 : 0;
+  scanning = true;
+
+  document.getElementById('btn-scan').disabled = true;
+  document.getElementById('scan-title').textContent =
+    `P${currentPlayer+1} スキャン中...`;
+
+  showScreen('screen-scan');
+
+  const camArea = document.getElementById('camera-area');
+  camArea.style.display = 'block';
+
+  Quagga.init({
+    inputStream: {
+      type: 'LiveStream',
+      target: camArea,
+      constraints: {
+        facingMode: 'environment',
+        width: { ideal: 640 },
+        height: { ideal: 300 }
+      }
+    },
+    decoder: {
+      readers: ['ean_reader','ean_8_reader','code_128_reader','upc_reader']
+    },
+    locate: true
+  }, (err) => {
+    if (err) {
+      document.getElementById('scan-msg').textContent =
+        'カメラが使えません。\nブラウザの許可を\n確認してね';
+      scanning = false;
+      document.getElementById('btn-scan').disabled = false;
+      return;
+    }
+    Quagga.start();
+    quaggaRunning = true;
+  });
+
+  Quagga.onDetected(onBarcodeDetected);
+}
+
+let lastCode = '';
+let lastTime = 0;
+
+function onBarcodeDetected(result) {
+  const code = result.codeResult.code;
+  const now = Date.now();
+  if (code === lastCode && now - lastTime < 2000) return;
+  lastCode = code;
+  lastTime = now;
+
+  stopQuagga();
+
+  const stats = calcStats(code);
+  if (!stats) {
+    document.getElementById('scan-msg').textContent = '読み取り失敗...\nもう一度！';
+    scanning = false;
+    document.getElementById('btn-scan').disabled = false;
+    return;
+  }
+
+  players[currentPlayer] = stats;
+  scanning = false;
+  document.getElementById('btn-scan').disabled = false;
+
+  updateReadyScreen();
+}
+
+function stopQuagga() {
+  if (quaggaRunning) {
+    Quagga.offDetected(onBarcodeDetected);
+    Quagga.stop();
+    quaggaRunning = false;
+  }
+  document.getElementById('camera-area').style.display = 'none';
+}
+
+function updateReadyScreen() {
+  const p1 = players[0];
+  const p2 = players[1];
+
+  if (p1) {
+    document.getElementById('p1-name-disp').textContent = p1.name;
+    document.getElementById('p1-hp-disp').textContent = p1.hp;
+    document.getElementById('p1-at-disp').textContent = p1.at;
+    document.getElementById('p1-df-disp').textContent = p1.df;
+  }
+
+  if (p1 && !p2) {
+    document.getElementById('ready-msg').textContent = 'P2のバーコードを\nスキャンせよ！';
+    document.getElementById('btn-scan').textContent = '📷 SCAN\nP2';
+    showScreen('screen-ready');
+  }
+
+  if (p1 && p2) {
+    document.getElementById('p2-name-disp').textContent = p2.name;
+    document.getElementById('p2-card').innerHTML =
+      `<span class="pname">PLAYER 2</span>
+       ${p2.name}<br>HP:${p2.hp}<br>AT:${p2.at}<br>DF:${p2.df}`;
+    document.getElementById('ready-msg').textContent = 'せんしがそろった！\nバトルせよ！';
+    document.getElementById('btn-battle').disabled = false;
+    document.getElementById('btn-scan').disabled = true;
+    showScreen('screen-ready');
+  }
+}
+
+// ===== バトル =====
+async function startBattle() {
+  if (!players[0] || !players[1]) return;
+
+  document.getElementById('btn-battle').disabled = true;
+  document.getElementById('btn-scan').disabled = true;
+
+  const p1 = { ...players[0] };
+  const p2 = { ...players[1] };
+
+  document.getElementById('b-p1-name').textContent = p1.name;
+  document.getElementById('b-p2-name').textContent = p2.name;
+
+  showScreen('screen-battle');
+  await updateBattleUI(p1, p2, 'バトルスタート！');
+  await sleep(800);
+
+  let round = 1;
+  while (p1.hp > 0 && p2.hp > 0 && round <= 20) {
+    // P1攻撃
+    const dmg1 = Math.max(1, p1.at - Math.floor(p2.df * 0.6) + Math.floor(Math.random() * 6));
+    p2.hp = Math.max(0, p2.hp - dmg1);
+    await updateBattleUI(p1, p2, `${p1.name}の\nこうげき！\n${p2.name}に\n${dmg1}ダメージ！`);
+    await sleep(900);
+    if (p2.hp <= 0) break;
+
+    // P2攻撃
+    const dmg2 = Math.max(1, p2.at - Math.floor(p1.df * 0.6) + Math.floor(Math.random() * 6));
+    p1.hp = Math.max(0, p1.hp - dmg2);
+    await updateBattleUI(p1, p2, `${p2.name}の\nこうげき！\n${p1.name}に\n${dmg2}ダメージ！`);
+    await sleep(900);
+
+    round++;
+  }
+
+  // 結果
+  await sleep(400);
+  showResult(p1, p2);
+}
+
+function updateBattleUI(p1, p2, msg) {
+  document.getElementById('b-p1-hp').textContent = p1.hp;
+  document.getElementById('b-p2-hp').textContent = p2.hp;
+  document.getElementById('battle-log').textContent = msg;
+  return Promise.resolve();
+}
+
+function showResult(p1, p2) {
+  let banner, detail;
+  if (p1.hp > p2.hp) {
+    banner = `${p1.name}\nのしょうり！！`;
+    detail = `P1がP2を\たおした！\nのこりHP:${p1.hp}`;
+  } else if (p2.hp > p1.hp) {
+    banner = `${p2.name}\nのしょうり！！`;
+    detail = `P2がP1を\nたおした！\nのこりHP:${p2.hp}`;
+  } else {
+    banner = 'ひきわけ！';
+    detail = `どちらも ${p1.hp}HP\nのこった！`;
+  }
+  document.getElementById('result-banner').textContent = banner;
+  document.getElementById('result-detail').textContent = detail;
+  showScreen('screen-result');
+  document.getElementById('btn-scan').disabled = false;
+  document.getElementById('btn-scan').textContent = '📷 SCAN\nP1';
+}
+
+function resetGame() {
+  stopQuagga();
+  players = [null, null];
+  scanning = false;
+  document.getElementById('btn-scan').disabled = false;
+  document.getElementById('btn-scan').textContent = '📷 SCAN\nP1';
+  document.getElementById('btn-battle').disabled = true;
+  showScreen('screen-idle');
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// 初期表示
+showScreen('screen-idle');
+</script>
+</body>
+</html>
