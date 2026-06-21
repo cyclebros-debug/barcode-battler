@@ -32,7 +32,19 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .party-slot{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;position:relative;cursor:pointer;transition:border-color .2s;min-height:76px;}
 .party-slot.selected{border-color:var(--red);box-shadow:0 0 10px rgba(255,34,0,.3);}
 .party-slot.empty{justify-content:center;border-style:dashed;cursor:default;color:var(--dim);font-size:11px;}
-.slot-portrait{width:52px;height:52px;border-radius:8px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;border:1px solid var(--border);}
+.slot-portrait{
+  width:52px;height:52px;border-radius:4px;background:#0a0a14;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:26px;border:2px solid #2a2a44;
+  image-rendering:pixelated;
+  box-shadow:inset 0 0 0 1px #000, 2px 2px 0 #000;
+  position:relative;
+}
+.slot-portrait::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.15) 3px,rgba(0,0,0,0.15) 4px);
+  pointer-events:none;border-radius:2px;
+}
 .slot-info{flex:1;min-width:0;}
 .slot-name{font-family:'Orbitron',sans-serif;font-size:10px;color:#e0c080;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
 .slot-stats{font-size:9px;color:var(--dim);line-height:1.7;}
@@ -81,7 +93,13 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .arena{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
 .fighter{background:#08080f;border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .fighter.p1{border:1px solid var(--red);}.fighter.p2{border:1px solid var(--blue);}
-.fighter-icon{width:48px;height:48px;border-radius:7px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.fighter-icon{
+  width:48px;height:48px;border-radius:4px;background:#0a0a14;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:22px;border:2px solid #2a2a44;
+  box-shadow:inset 0 0 0 1px #000, 2px 2px 0 #000;
+  image-rendering:pixelated;position:relative;
+}
 .fighter-info{flex:1;min-width:0;}
 .fighter-name{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
 .fighter-hp-bar{height:6px;background:#1a1a22;border-radius:3px;overflow:hidden;margin-bottom:2px;}
@@ -289,7 +307,7 @@ input:focus{outline:none;border-color:var(--red);}
 <div class="overlay" id="modal-swap">
   <div class="modal">
     <div class="modal-title" style="font-size:16px;">⚠ パーティ満員</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">誰かと入れ替えてください</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">放出する戦士を選んでください</div>
     <div class="swap-list" id="swap-list"></div>
     <button class="btn btn-ghost" onclick="cancelSwap()">✕ 仲間にしない</button>
   </div>
@@ -330,10 +348,41 @@ input:focus{outline:none;border-color:var(--red);}
 const MAX_PARTY=5, COOLDOWN_WIN=1, COOLDOWN_LOSE=3, BOSS_THRESHOLD=7, FLASH_BIG=40;
 const RARE_THR={SSR:97,SR:85,R:60};
 const RARE_BONUS={N:{hp:0,at:0,df:0},R:{hp:20,at:5,df:5},SR:{hp:50,at:15,df:10},SSR:{hp:100,at:30,df:20}};
-// 16bitゲームキャラ風アイコン（男性戦士）
-const ICONS_M=['🧙','🗡️','🛡️','🏹','⚔️','🪄','🔰','🧝','🦸','🥷','🧟','🧛','👹','👺','🐉','🦊','🐺','🦅','🐻','🦁','🐯','🦖','🦂','🦇','👾'];
-// 16bitゲームキャラ風アイコン（女性戦士）
-const ICONS_F=['🧝','🧚','🧜','🧙','🌟','💫','🌸','🦋','🌺','🧞','🧝','🌙','⭐','🌠','💎','🪄','🌈','🦄','🧿','🌻'];
+// 16bitゲームキャラ風スプライト絵文字（ドット絵っぽい表現）
+// 戦士タイプ：ファイター/メイジ/アーチャー/ナイト/シーフ/モンク/パラディン/バーサーカー
+const WARRIOR_TYPES = [
+  {icon:'⚔', label:'ファイター'},
+  {icon:'🔥', label:'ウィザード'},
+  {icon:'🏹', label:'アーチャー'},
+  {icon:'🛡', label:'ナイト'},
+  {icon:'🗡', label:'シーフ'},
+  {icon:'👊', label:'モンク'},
+  {icon:'✝', label:'パラディン'},
+  {icon:'💢', label:'バーサーカー'},
+  {icon:'⚡', label:'サンダラー'},
+  {icon:'❄', label:'アイスマン'},
+  {icon:'💀', label:'ネクロ'},
+  {icon:'🌀', label:'ウィンドマスター'},
+  {icon:'🔮', label:'ソーサラー'},
+  {icon:'🌑', label:'ダークナイト'},
+  {icon:'☄', label:'コメットマン'},
+];
+// P1用（主人公タイプ）
+const ICONS_M = WARRIOR_TYPES.map(t=>t.icon+'\u{FE0F}');
+// 女性戦士タイプ
+const WARRIOR_TYPES_F = [
+  {icon:'🌸', label:'フローラ'},
+  {icon:'💫', label:'スターライト'},
+  {icon:'🌙', label:'ルナ'},
+  {icon:'⭐', label:'スターウォーカー'},
+  {icon:'🔮', label:'オラクル'},
+  {icon:'🌊', label:'ティダル'},
+  {icon:'💎', label:'クリスタル'},
+  {icon:'🌈', label:'プリズマ'},
+  {icon:'✨', label:'エンチャンター'},
+  {icon:'🌺', label:'フローレス'},
+];
+const ICONS_F = WARRIOR_TYPES_F.map(t=>t.icon+'\u{FE0F}');
 // 80〜90年代 週刊少年ジャンプ・マガジン登場キャラ（男性）
 const NAMES_M=[
   // ドラゴンボール（ジャンプ84〜95）
@@ -401,12 +450,14 @@ const NAMES_F=[
 let party=[],selP1=-1,restCnt=COOLDOWN_WIN,restRequired=COOLDOWN_WIN,battleCnt=0;
 let p2Warrior=null,p2MaxHp=0,pendingW=null,heroName='';
 let currentFighterIdx=0,_battling=false,lastDefeatedIdx=-1;
+let restPerWarrior={}; // {index: 残り休憩回数}
 let scanTarget=null,videoStream=null,scanInterval=null;
 const RC_CLS={N:'r-N',R:'r-R',SR:'r-SR',SSR:'r-SSR'};
 
 // ===== STORAGE =====
-function saveAll(){try{localStorage.setItem('bb_p',JSON.stringify(party));localStorage.setItem('bb_m',JSON.stringify({selP1,restCnt,restRequired,battleCnt,heroName,lastDefeatedIdx}));}catch(e){}}
-function loadAll(){try{const p=localStorage.getItem('bb_p'),m=localStorage.getItem('bb_m');if(p)party=JSON.parse(p);if(m){const o=JSON.parse(m);selP1=o.selP1??-1;restCnt=o.restCnt??COOLDOWN_WIN;restRequired=o.restRequired??COOLDOWN_WIN;battleCnt=o.battleCnt??0;heroName=o.heroName||'';lastDefeatedIdx=o.lastDefeatedIdx??-1;}else{restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}if(selP1>=party.length)selP1=-1;}catch(e){party=[];restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}}
+function saveAll(){try{localStorage.setItem('bb_p',JSON.stringify(party));localStorage.setItem('bb_m',JSON.stringify({selP1,restCnt,restRequired,battleCnt,heroName,lastDefeatedIdx,restPerWarrior}));}catch(e){}}
+function loadAll(){try{const p=localStorage.getItem('bb_p'),m=localStorage.getItem('bb_m');if(p)party=JSON.parse(p);if(m){const o=JSON.parse(m);selP1=o.selP1??-1;restCnt=o.restCnt??COOLDOWN_WIN;restRequired=o.restRequired??COOLDOWN_WIN;battleCnt=o.battleCnt??0;heroName=o.heroName||'';lastDefeatedIdx=o.lastDefeatedIdx??-1;
+    restPerWarrior=o.restPerWarrior||{};}else{restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}if(selP1>=party.length)selP1=-1;}catch(e){party=[];restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}}
 
 // ===== CALC =====
 function calcRarity(d){const n=parseInt(d.slice(-2))||0;if(n>=RARE_THR.SSR)return 'SSR';if(n>=RARE_THR.SR)return 'SR';if(n>=RARE_THR.R)return 'R';return 'N';}
@@ -423,7 +474,7 @@ function calcStats(code,isP2){
   if(isP2&&(parseInt(d.slice(-2))||0)<=BOSS_THRESHOLD){isBoss=true;const m=1.5+(seed%100)/66.7;hp=Math.min(500,Math.round(hp*m));at=Math.min(200,Math.round(at*m));df=Math.min(200,Math.round(df*m));}
   let name,icon,isFemale=false;
   if(isP2){isFemale=(parseInt(d.slice(-1))%5===0);if(isFemale){name=NAMES_F[parseInt(d.slice(-3))%NAMES_F.length];icon=ICONS_F[parseInt(d.slice(-4))%ICONS_F.length];}else{name=NAMES_M[parseInt(d.slice(-3))%NAMES_M.length];icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}if(isBoss)name='[BOSS]'+name;}
-  else{name=heroName||'ヒーロー';icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}
+  else{name=heroName||'ヒーロー';const wtIdx=parseInt(d.slice(-4))%WARRIOR_TYPES.length;icon=WARRIOR_TYPES[wtIdx].icon;}
   const special=calcSpecial(d);
   return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale,lev:1,exp:0,code:d,special,isBoss};
 }
@@ -459,8 +510,18 @@ function showTab(id){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   document.getElementById('nav-'+id).classList.add('active');
-  if(id!=='battle'&&battleCnt>0&&!canBattleNow()){restCnt=Math.min(restRequired,restCnt+1);saveAll();}
+  if(id!=='battle'&&battleCnt>0){
+    // 全戦士の休憩カウントダウン
+    let changed=false;
+    Object.keys(restPerWarrior).forEach(k=>{
+      if(restPerWarrior[k]>0){restPerWarrior[k]--;changed=true;}
+      if(restPerWarrior[k]<=0) delete restPerWarrior[k];
+    });
+    if(!canBattleNow()){restCnt=Math.min(restRequired,restCnt+1);}
+    if(changed)saveAll();
+  }
   updateCooldownHint();
+  renderParty();
 }
 function canBattleNow(){return restCnt>=restRequired;}
 function updateCooldownHint(){
@@ -477,11 +538,11 @@ function updateScanTab(){const f=party.length===0;document.getElementById('scan-
 // 戦士ごとの休憩残り回数を計算
 // 選択中の戦士が休憩中かどうか（selP1が最後に戦った戦士）
 function getRestInfo(i) {
-  // 直近のバトルで負けた戦士インデックスを記録
-  if (i === lastDefeatedIdx && restCnt < restRequired) {
-    return restRequired - restCnt; // 残り休憩回数
-  }
-  return 0;
+  return restPerWarrior[i] || 0;
+}
+function setRestForWarrior(i, required) {
+  restPerWarrior[i] = required;
+  saveAll();
 }
 
 function renderParty(){
@@ -757,13 +818,13 @@ async function executeBattle(){
   if(p2.hp<=0){
     push(`${p2.name} を倒した！`,'var(--gold)');await sleep(400);
     battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;
-    lastDefeatedIdx=currentFighterIdx; saveAll();
+    setRestForWarrior(currentFighterIdx,COOLDOWN_WIN);
     setBattlePhase('pre');onVictory(push);
   } else {
     push(`${p1.name} は倒れた！`,'#ff4444');await sleep(600);
     p2Warrior.hp=p2.hp;
-    lastDefeatedIdx=currentFighterIdx;
-    battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();
+    setRestForWarrior(currentFighterIdx,COOLDOWN_LOSE);
+    battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;
     showDefeatModal(p2.name,p2.hp);
     setBattlePhase('pre');
   }
@@ -835,8 +896,13 @@ function recruitYes(){
   closeModal('modal-recruit');
   const w={...p2Warrior};
   if(w.special){w.lev=1+w.special.levBonus;for(let i=0;i<w.special.levBonus;i++){w.hp+=10;w.maxHp+=10;w.at+=3;w.df+=2;}}
-  if(party.length<MAX_PARTY){party.push(w);saveAll();renderParty();resetBattle();}
-  else{p2Warrior=w;showSwapModal();}
+  // 5人以下なら直接追加、満員でも放出モーダルを表示
+  if(party.length<MAX_PARTY){
+    party.push(w);saveAll();renderParty();resetBattle();
+  } else {
+    p2Warrior=w; // 仮保存
+    showSwapModal(); // 誰かを放出してから追加
+  }
 }
 function recruitNo(){closeModal('modal-recruit');resetBattle();}
 function showSwapModal(){
@@ -844,7 +910,13 @@ function showSwapModal(){
   party.forEach((w,i)=>{const d=document.createElement('div');d.className='swap-item';d.innerHTML=`<div class="swap-icon">${w.icon||'⚔️'}</div><div><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span><div style="font-size:9px;color:#e0c080">${w.name}</div><div style="font-size:8px;color:var(--dim)">LEV${w.lev||1} HP:${w.hp} AT:${w.at} DF:${w.df}</div></div>`;d.onclick=()=>doSwap(i);list.appendChild(d);});
   showModal('modal-swap');
 }
-function doSwap(i){party[i]={...p2Warrior};saveAll();renderParty();closeModal('modal-swap');resetBattle();}
+function doSwap(i){
+  // i番を放出してp2Warriorを追加
+  party.splice(i,1,{...p2Warrior});
+  if(selP1===i) selP1=i; // 選択を維持
+  saveAll();renderParty();
+  closeModal('modal-swap');resetBattle();
+}
 function cancelSwap(){closeModal('modal-swap');resetBattle();}
 function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 function resetBattle(){
