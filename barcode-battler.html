@@ -32,8 +32,10 @@ body{
 }
 
 /* ===== SCREENS ===== */
-.screen{display:none;min-height:100vh;}
-.screen.active{display:block;}
+.screen { display:none; min-height:100vh; }
+.screen.active { display:block; }
+#s-home { display:flex; flex-direction:column; align-items:center; padding:0 0 40px; }
+#s-home.active { display:flex; }
 
 /* ===== HOME ===== */
 #s-home{
@@ -632,10 +634,13 @@ function calcStats(code, isP2) {
 
 // ===== HOME <-> MAIN =====
 function enterMain() {
+  document.getElementById('s-home').style.display = 'none';
   document.getElementById('s-home').classList.remove('active');
+  document.getElementById('s-main').style.display = 'block';
   document.getElementById('s-main').classList.add('active');
   renderParty();
   updateScanTab();
+  updateCooldownHint();
   if (party.length === 0) {
     if (!heroName) {
       showModal('modal-heroname');
@@ -654,7 +659,9 @@ function confirmHeroName() {
 }
 function goHome() {
   stopQuagga();
+  document.getElementById('s-main').style.display = 'none';
   document.getElementById('s-main').classList.remove('active');
+  document.getElementById('s-home').style.display = 'flex';
   document.getElementById('s-home').classList.add('active');
   updateHomeInfo();
 }
@@ -669,6 +676,11 @@ function updateHomeInfo() {
 }
 function closeFirst() {
   closeModal('modal-first');
+  // メイン画面が確実に表示されているか確認
+  document.getElementById('s-home').style.display = 'none';
+  document.getElementById('s-home').classList.remove('active');
+  document.getElementById('s-main').style.display = 'block';
+  document.getElementById('s-main').classList.add('active');
   showTab('scan');
 }
 
