@@ -142,7 +142,7 @@ body{
 
 /* ===== SCAN ===== */
 .cam-wrap{
-  position:relative;width:100%;height:160px;
+  position:relative;width:100%;height:220px;
   background:#000;border-radius:8px;overflow:hidden;margin-bottom:10px;
 }
 .cam-wrap video{width:100%;height:100%;object-fit:cover;}
@@ -344,6 +344,8 @@ input:focus{outline:none;border-color:var(--red);}
           <div class="scan-line"></div>
           <div class="corner tl"></div><div class="corner tr"></div>
           <div class="corner bl"></div><div class="corner br"></div>
+          <div style="position:absolute;top:50%;left:5%;right:5%;height:2px;background:rgba(255,200,0,0.6);transform:translateY(-50%);z-index:7;box-shadow:0 0 6px rgba(255,200,0,0.8);"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;color:rgba(255,255,255,0.7);font-size:10px;text-align:center;white-space:nowrap;background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:4px;">バーコードをこの線に合わせて</div>
         </div>
         <div id="scan-msg" class="msg msg-info hidden"></div>
         <button class="btn btn-primary" id="btn-scan-p1" onclick="startScan('p1')">📷 スキャン開始</button>
@@ -392,6 +394,8 @@ input:focus{outline:none;border-color:var(--red);}
           <div class="scan-line"></div>
           <div class="corner tl"></div><div class="corner tr"></div>
           <div class="corner bl"></div><div class="corner br"></div>
+          <div style="position:absolute;top:50%;left:5%;right:5%;height:2px;background:rgba(255,200,0,0.6);transform:translateY(-50%);z-index:7;box-shadow:0 0 6px rgba(255,200,0,0.8);"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;color:rgba(255,255,255,0.7);font-size:10px;text-align:center;white-space:nowrap;background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:4px;">バーコードをこの線に合わせて</div>
         </div>
         <div id="p2-msg" class="msg msg-info hidden"></div>
         <button class="btn btn-secondary" id="btn-scan-p2" onclick="startScan('p2')">📷 敵をスキャン</button>
@@ -1201,9 +1205,36 @@ function startQuagga(containerId, callback) {
   stopQuagga();
   const container = document.getElementById(containerId);
   Quagga.init({
-    inputStream:{ type:'LiveStream', target:container, constraints:{ facingMode:'environment', width:{ideal:640}, height:{ideal:280} } },
-    decoder:{ readers:['ean_reader','ean_8_reader','code_128_reader','upc_reader'] },
-    locate:true
+    inputStream:{
+      type:'LiveStream',
+      target:container,
+      constraints:{
+        facingMode:'environment',
+        width:{ min:640, ideal:1920, max:1920 },
+        height:{ min:480, ideal:1080, max:1080 },
+      },
+      area:{ // 中央の細い帯だけスキャン（EANバーコード向け）
+        top:'30%',
+        right:'5%',
+        left:'5%',
+        bottom:'30%',
+      },
+    },
+    locator:{
+      patchSize:'large',  // CDの細いバーコード向けにlargeに
+      halfSample:false,
+    },
+    numOfWorkers: 1,
+    frequency: 5,
+    decoder:{
+      readers:[
+        { format:'ean_reader', config:{ supplements:[] } },
+        'ean_8_reader',
+        'upc_reader',
+      ],
+      multiple: false,
+    },
+    locate: true,
   }, err => {
     if (err) {
       const msgId = scanTarget==='p1' ? 'scan-msg' : 'p2-msg';
@@ -1216,8 +1247,19 @@ function startQuagga(containerId, callback) {
     Quagga.start();
     quaggaRunning = true;
   });
+
+  // 信頼度チェック付き検出
   Quagga.onDetected(result => {
     const code = result.codeResult.code;
+    if (!code) return;
+    // 信頼度チェック（エラーが少ないものだけ通す）
+    const errors = result.codeResult.decodedCodes
+      .filter(x => x.error !== undefined)
+      .map(x => x.error);
+    if (errors.length > 0) {
+      const avgError = errors.reduce((a,b)=>a+b,0) / errors.length;
+      if (avgError > 0.15) return; // 信頼度が低い場合スキップ
+    }
     const now = Date.now();
     if (code === lastCode && now - lastTime < 2000) return;
     lastCode = code; lastTime = now;
