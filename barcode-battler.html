@@ -213,9 +213,14 @@ input:focus{outline:none;border-color:var(--red);}
         </div>
       </div>
       <div class="battle-log" id="battle-log">バトル開始を待っています...</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <!-- バトル前：BATTLE と にげる を両方表示 -->
+      <div id="btn-area-pre" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
         <button class="btn btn-battle" id="btn-battle-start" onclick="executeBattle()">⚔ BATTLE</button>
-        <button class="btn btn-flee" id="btn-flee" onclick="fleeBattle()" disabled>🏃 にげる</button>
+        <button class="btn btn-flee" id="btn-flee-pre" onclick="fleeBattle()">🏃 にげる</button>
+      </div>
+      <!-- バトル中：非表示 -->
+      <div id="btn-area-fighting" style="display:none;margin-top:10px;">
+        <div style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">バトル中...</div>
       </div>
     </div>
     <button class="btn btn-ghost" onclick="resetBattle()" style="margin-top:4px">↺ リセット</button>
@@ -264,8 +269,15 @@ input:focus{outline:none;border-color:var(--red);}
   <div class="modal">
     <div class="modal-title" style="color:var(--blue);">💀 DEFEAT</div>
     <div class="modal-sub" id="def-name"></div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;">再び挑め、戦士よ。</div>
-    <button class="btn btn-primary" onclick="closeDefeat()">続ける</button>
+    <div style="font-size:10px;color:var(--dim);margin-bottom:4px;" id="def-enemy-hp"></div>
+    <div id="def-next-area" style="display:none;">
+      <div style="font-size:11px;color:#cc8844;margin-bottom:8px;border-top:1px solid var(--border);padding-top:10px;">次の戦士を選んで再戦！</div>
+      <div class="swap-list" id="def-fighter-list"></div>
+    </div>
+    <div id="def-all-down" style="display:none;">
+      <div style="font-size:11px;color:var(--dim);margin-bottom:14px;">全員倒れた...<br/>再び挑め、戦士よ。</div>
+    </div>
+    <button class="btn btn-ghost" onclick="defeatGiveUp()" id="btn-def-giveup">あきらめる</button>
   </div>
 </div>
 <div class="overlay" id="modal-first">
@@ -566,15 +578,22 @@ function resetScan(){stopScan('p1');pendingW=null;document.getElementById('w-pre
 // ===== ARENA =====
 function setupArena(){
   if(!p2Warrior||selP1<0)return;
-  currentFighterIdx=selP1;p2MaxHp=p2Warrior.hp;
+  currentFighterIdx=selP1;
+  if(p2MaxHp===0) p2MaxHp=p2Warrior.hp;
   document.getElementById('p2-scan-area').classList.add('hidden');
   document.getElementById('arena').classList.remove('hidden');
   updateFighterBar();
   setFighter('p1',party[currentFighterIdx],party[currentFighterIdx].hp,party[currentFighterIdx].hp);
   setFighter('p2',p2Warrior,p2Warrior.hp,p2MaxHp);
-  document.getElementById('battle-log').textContent=p2Warrior.isBoss?`BOSS出現！${p2Warrior.name}\nHP:${p2Warrior.hp} AT:${p2Warrior.at} DF:${p2Warrior.df}`:'バトル準備完了！STARTを押せ！';
-  document.getElementById('btn-battle-start').disabled=false;
-  document.getElementById('btn-flee').disabled=true;
+  const msg=p2Warrior.isBoss
+    ?`BOSS出現！${p2Warrior.name}\nHP:${p2Warrior.hp} AT:${p2Warrior.at} DF:${p2Warrior.df}`
+    :`${p2Warrior.name} [${p2Warrior.rarity}]\nHP:${p2Warrior.hp} AT:${p2Warrior.at} DF:${p2Warrior.df}\nバトル or にげるを選べ！`;
+  document.getElementById('battle-log').textContent=msg;
+  setBattlePhase('pre');
+}
+function setBattlePhase(phase){
+  document.getElementById('btn-area-pre').style.display=phase==='pre'?'grid':'none';
+  document.getElementById('btn-area-fighting').style.display=phase==='fighting'?'block':'none';
 }
 function updateFighterBar(){const w=party[currentFighterIdx];if(!w)return;document.getElementById('current-fighter-bar').textContent=`出撃中: ${w.name} (LEV${w.lev||1}) [${currentFighterIdx+1}/${party.length}人目]`;}
 function setFighter(side,w,hp,maxHp){
@@ -590,54 +609,90 @@ function flash(color){const el=document.getElementById('flash-overlay');el.style
 async function executeBattle(){
   if(_battling||!p2Warrior||currentFighterIdx<0)return;
   _battling=true;
-  document.getElementById('btn-battle-start').disabled=true;
-  document.getElementById('btn-flee').disabled=false;
-  const log=document.getElementById('battle-log');log.textContent='';
+  setBattlePhase('fighting');
+  const log=document.getElementById('battle-log');
   const push=(text,color)=>{const s=document.createElement('span');s.textContent=text+'\n';if(color)s.style.color=color;log.appendChild(s);log.scrollTop=log.scrollHeight;};
+  const curW=party[currentFighterIdx];
+  const p1={...curW};const p1Max=p1.hp;
   let p2={...p2Warrior};
-  while(currentFighterIdx<party.length&&p2.hp>0){
-    const curW=party[currentFighterIdx];const p1={...curW};const p1Max=p1.hp;
-    if(currentFighterIdx>selP1){push(`\n次の戦士 ${p1.name} が出撃！`,'var(--purple)');await sleep(500);}
-    updateFighterBar();setFighter('p1',p1,p1.hp,p1Max);
-    push(`${p1.name} VS ${p2.name}！`);await sleep(600);
-    let round=1;
-    while(p1.hp>0&&p2.hp>0&&round<=30&&_battling){
-      push(`\n-- ROUND ${round} --`);await sleep(350);
-      if(!p2.isBoss&&rand(100)<5){
-        push(`${p2.name} は逃げ出した！`,'#aaaaff');
-        party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)+1);
-        push(`${p1.name} のATが上がった！(AT:${party[currentFighterIdx].at})`,'var(--green)');
-        await sleep(800);_battling=false;battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();
-        document.getElementById('btn-flee').disabled=true;renderParty();onVictory(push);return;
-      }
-      const d1=Math.max(1,p1.at-Math.floor(p2.df*.5)+rand(8));
-      p2.hp=Math.max(0,p2.hp-d1);
-      push(`${p1.name}の攻撃！`,'var(--red)');push(`${p2.name}に${d1}ダメージ！(HP:${p2.hp})`,'#ff8800');
-      setFighter('p2',p2,p2.hp,p2MaxHp);if(d1>=FLASH_BIG)flash('rgba(255,100,0,0.5)');
-      await sleep(650);if(p2.hp<=0)break;
-      const d2=Math.max(1,p2.at-Math.floor(p1.df*.5)+rand(8));
-      p1.hp=Math.max(0,p1.hp-d2);
-      push(`${p2.name}の反撃！`,'var(--blue)');push(`${p1.name}に${d2}ダメージ！(HP:${p1.hp})`,'#ff8800');
-      setFighter('p1',p1,p1.hp,p1Max);if(d2>=FLASH_BIG)flash('rgba(0,100,255,0.4)');
-      await sleep(650);round++;
+  log.textContent='';
+  push(`${p1.name} VS ${p2.name}！`);await sleep(600);
+  let round=1;
+  while(p1.hp>0&&p2.hp>0&&round<=30&&_battling){
+    push(`\n-- ROUND ${round} --`);await sleep(350);
+    if(!p2.isBoss&&rand(100)<5){
+      push(`${p2.name} は逃げ出した！`,'#aaaaff');
+      party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)+1);
+      push(`${p1.name} のATが上がった！(AT:${party[currentFighterIdx].at})`,'var(--green)');
+      await sleep(800);_battling=false;battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();
+      setBattlePhase('pre');document.getElementById('btn-battle-start').disabled=true;
+      renderParty();onVictory(push);return;
     }
-    if(p2.hp<=0){push(`${p2.name} を倒した！`,'var(--gold)');await sleep(400);_battling=false;battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();document.getElementById('btn-flee').disabled=true;onVictory(push);return;}
-    if(p1.hp<=0){push(`${p1.name} は倒れた！`,'#ff4444');await sleep(500);currentFighterIdx++;if(currentFighterIdx<party.length){push('次の戦士を呼ぶ...',null);await sleep(600);}}
+    const d1=Math.max(1,p1.at-Math.floor(p2.df*.5)+rand(8));
+    p2.hp=Math.max(0,p2.hp-d1);
+    push(`${p1.name}の攻撃！`,'var(--red)');push(`${p2.name}に${d1}ダメージ！(HP:${p2.hp})`,'#ff8800');
+    setFighter('p2',p2,p2.hp,p2MaxHp);if(d1>=FLASH_BIG)flash('rgba(255,100,0,0.5)');
+    await sleep(650);if(p2.hp<=0)break;
+    const d2=Math.max(1,p2.at-Math.floor(p1.df*.5)+rand(8));
+    p1.hp=Math.max(0,p1.hp-d2);
+    push(`${p2.name}の反撃！`,'var(--blue)');push(`${p1.name}に${d2}ダメージ！(HP:${p1.hp})`,'#ff8800');
+    setFighter('p1',p1,p1.hp,p1Max);if(d2>=FLASH_BIG)flash('rgba(0,100,255,0.4)');
+    await sleep(650);round++;
   }
-  await sleep(400);push('\n全員倒れた...','var(--blue)');_battling=false;
-  battleCnt++;restCnt=0;restRequired=COOLDOWN_LOSE;saveAll();
-  document.getElementById('btn-flee').disabled=true;
-  document.getElementById('def-name').textContent=p2.name;showModal('modal-defeat');
+  _battling=false;
+  if(p2.hp<=0){
+    push(`${p2.name} を倒した！`,'var(--gold)');await sleep(400);
+    battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();
+    setBattlePhase('pre');onVictory(push);
+  } else {
+    push(`${p1.name} は倒れた！`,'#ff4444');await sleep(600);
+    p2Warrior.hp=p2.hp;
+    showDefeatModal(p2.name,p2.hp);
+    setBattlePhase('pre');
+  }
 }
 
 async function fleeBattle(){
-  if(!_battling)return;_battling=false;
-  document.getElementById('btn-flee').disabled=true;document.getElementById('btn-battle-start').disabled=true;
+  if(_battling)return;
   const log=document.getElementById('battle-log');
   const s=document.createElement('span');s.textContent=`\n${party[currentFighterIdx].name} は逃げた！ATが1下がった...\n`;s.style.color='#aaa';log.appendChild(s);log.scrollTop=log.scrollHeight;
   party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)-1);saveAll();renderParty();
-  battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();updateCooldownHint();resetBattle();
+  battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();updateCooldownHint();
+  await sleep(600);resetBattle();
 }
+
+function showDefeatModal(enemyName,enemyHp){
+  document.getElementById('def-name').textContent=enemyName;
+  document.getElementById('def-enemy-hp').textContent=`敵の残りHP: ${enemyHp}`;
+  const available=party.map((_,i)=>i).filter(i=>i!==currentFighterIdx);
+  if(available.length>0){
+    document.getElementById('def-next-area').style.display='block';
+    document.getElementById('def-all-down').style.display='none';
+    const list=document.getElementById('def-fighter-list');list.innerHTML='';
+    available.forEach(i=>{const w=party[i];const div=document.createElement('div');div.className='swap-item';div.innerHTML=`<div class="swap-icon">${w.icon||'⚔️'}</div><div><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span><div style="font-size:9px;color:#e0c080">${w.name}</div><div style="font-size:8px;color:var(--dim)">LEV${w.lev||1} HP:${w.hp} AT:${w.at} DF:${w.df}</div></div>`;div.onclick=()=>selectNextFighter(i);list.appendChild(div);});
+    document.getElementById('btn-def-giveup').textContent='あきらめる';
+  } else {
+    document.getElementById('def-next-area').style.display='none';
+    document.getElementById('def-all-down').style.display='block';
+    battleCnt++;restCnt=0;restRequired=COOLDOWN_LOSE;saveAll();
+    document.getElementById('btn-def-giveup').textContent='続ける';
+  }
+  showModal('modal-defeat');
+}
+
+function selectNextFighter(idx){
+  closeModal('modal-defeat');
+  currentFighterIdx=idx;selP1=idx;saveAll();
+  updateFighterBar();
+  setFighter('p1',party[currentFighterIdx],party[currentFighterIdx].hp,party[currentFighterIdx].hp);
+  setFighter('p2',p2Warrior,p2Warrior.hp,p2MaxHp);
+  const log=document.getElementById('battle-log');log.textContent='';
+  const s=document.createElement('span');s.textContent=`${party[currentFighterIdx].name} が出撃！\n敵の残りHP: ${p2Warrior.hp}\nバトル or にげるを選べ！`;s.style.color='var(--purple)';log.appendChild(s);
+  setBattlePhase('pre');
+}
+
+function defeatGiveUp(){closeModal('modal-defeat');resetBattle();}
+function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
@@ -679,8 +734,7 @@ function resetBattle(){
   document.getElementById('arena').classList.add('hidden');
   document.getElementById('p2-msg').classList.add('hidden');
   document.getElementById('btn-scan-p2').disabled=false;
-  document.getElementById('btn-flee').disabled=true;
-  document.getElementById('btn-battle-start').disabled=false;
+  setBattlePhase('pre');
   updateCooldownHint();
 }
 function showEnding(){document.getElementById('s-main').style.display='none';document.getElementById('s-ending').style.display='flex';}
