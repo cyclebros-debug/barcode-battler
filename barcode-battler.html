@@ -4,306 +4,114 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>BARCODE BATTLER</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/zxing-js/library/dist/zxing.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
-
-:root {
-  --bg:#0a0a0f;
-  --panel:#12121a;
-  --border:#1e1e2e;
-  --red:#ff2200;
-  --gold:#ffd700;
-  --green:#00ff88;
-  --blue:#4488ff;
-  --purple:#aa44ff;
-  --text:#d0c8b8;
-  --dim:#505060;
-}
-
+:root{--bg:#0a0a0f;--panel:#12121a;--border:#1e1e2e;--red:#ff2200;--gold:#ffd700;--green:#00ff88;--blue:#4488ff;--purple:#aa44ff;--text:#d0c8b8;--dim:#505060;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Share Tech Mono',monospace;
-  min-height:100vh;
-  overflow-x:hidden;
-}
-
-/* ===== SCREENS ===== */
-.screen { display:none; min-height:100vh; }
-.screen.active { display:block; }
-#s-home { display:flex; flex-direction:column; align-items:center; padding:0 0 40px; }
-#s-home.active { display:flex; }
-
-/* ===== HOME ===== */
-#s-home{
-  position:relative;overflow:hidden;
-  display:flex;flex-direction:column;align-items:center;
-  padding:0 0 40px;
-}
-.home-glow{
-  position:absolute;top:0;left:0;right:0;height:300px;
-  background:radial-gradient(ellipse at 50% -20%,rgba(255,34,0,.4) 0%,transparent 70%);
-  z-index:0;pointer-events:none;
-}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;}
+#s-home{display:flex;flex-direction:column;align-items:center;padding:0 0 40px;position:relative;overflow:hidden;}
+#s-main{display:none;}
+.home-glow{position:absolute;top:0;left:0;right:0;height:300px;background:radial-gradient(ellipse at 50% -20%,rgba(255,34,0,.4) 0%,transparent 70%);z-index:0;pointer-events:none;}
 .home-content{position:relative;z-index:1;text-align:center;padding:40px 20px 0;width:100%;}
 .home-sub{font-size:10px;letter-spacing:6px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
-.home-title{
-  font-family:'Orbitron',sans-serif;font-weight:900;
-  font-size:clamp(22px,8vw,36px);
-  line-height:1;color:var(--red);
-  text-shadow:0 0 30px rgba(255,34,0,.7),0 0 60px rgba(255,34,0,.3);
-  margin-bottom:4px;letter-spacing:2px;
-}
+.home-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(22px,8vw,36px);line-height:1;color:var(--red);text-shadow:0 0 30px rgba(255,34,0,.7);margin-bottom:4px;letter-spacing:2px;}
 .home-title span{display:block;font-size:clamp(16px,6vw,26px);color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.6);}
 .home-skull{font-size:70px;margin:16px 0;display:block;filter:drop-shadow(0 0 20px rgba(255,34,0,.6));}
 .home-desc{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:20px;}
-.home-party-info{
-  background:rgba(255,34,0,.08);border:1px solid rgba(255,34,0,.2);
-  border-radius:8px;padding:10px 16px;margin:0 20px 20px;font-size:11px;color:var(--dim);
-}
+.home-party-info{background:rgba(255,34,0,.08);border:1px solid rgba(255,34,0,.2);border-radius:8px;padding:10px 16px;margin:0 20px 20px;font-size:11px;color:var(--dim);}
 .home-party-info span{color:var(--gold);}
-.home-btn{
-  font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;letter-spacing:3px;
-  color:#fff;background:linear-gradient(135deg,#880000,#cc0000,#ff2200);
-  border:none;border-radius:6px;padding:16px 0;cursor:pointer;
-  width:calc(100% - 40px);margin:0 20px;display:block;
-  box-shadow:0 0 20px rgba(255,34,0,.4);
-  transition:box-shadow .2s;
-}
-.home-btn:active{transform:scale(.98);}
-
-/* ===== NAV ===== */
-.nav{
-  position:sticky;top:0;z-index:100;
-  display:flex;border-bottom:1px solid var(--border);
-  background:rgba(10,10,15,.95);backdrop-filter:blur(8px);
-}
-.nav-btn{
-  flex:1;background:none;border:none;color:var(--dim);
-  font-family:'Share Tech Mono',monospace;font-size:10px;
-  padding:10px 2px;cursor:pointer;
-  border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.5px;
-}
+.home-btn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;letter-spacing:3px;color:#fff;background:linear-gradient(135deg,#880000,#cc0000,#ff2200);border:none;border-radius:6px;padding:16px 0;cursor:pointer;width:calc(100% - 40px);margin:0 20px;display:block;box-shadow:0 0 20px rgba(255,34,0,.4);}
+.nav{position:sticky;top:0;z-index:100;display:flex;border-bottom:1px solid var(--border);background:rgba(10,10,15,.95);backdrop-filter:blur(8px);}
+.nav-btn{flex:1;background:none;border:none;color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;padding:10px 2px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
 .nav-btn.active{color:var(--red);border-bottom-color:var(--red);}
-
-/* ===== TABS ===== */
 .tab{display:none;padding:12px 12px 60px;}
 .tab.active{display:block;}
-
-/* ===== CARDS ===== */
-.card{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:10px;padding:14px;margin-bottom:12px;
-}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
 .card-title{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;}
-
-/* ===== PARTY SLOTS ===== */
-.party-slot{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:10px;padding:10px;margin-bottom:8px;
-  display:flex;align-items:center;gap:10px;
-  position:relative;cursor:pointer;transition:border-color .2s;
-  min-height:76px;
-}
+.party-slot{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;position:relative;cursor:pointer;transition:border-color .2s;min-height:76px;}
 .party-slot.selected{border-color:var(--red);box-shadow:0 0 10px rgba(255,34,0,.3);}
-.party-slot.empty{
-  justify-content:center;border-style:dashed;cursor:default;
-  color:var(--dim);font-size:11px;
-}
-.slot-portrait{
-  width:52px;height:52px;border-radius:8px;background:#1a1a22;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  font-size:26px;border:1px solid var(--border);overflow:hidden;
-}
-.slot-portrait img{width:100%;height:100%;object-fit:cover;}
+.party-slot.empty{justify-content:center;border-style:dashed;cursor:default;color:var(--dim);font-size:11px;}
+.slot-portrait{width:52px;height:52px;border-radius:8px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;border:1px solid var(--border);}
 .slot-info{flex:1;min-width:0;}
-.slot-name{
-  font-family:'Orbitron',sans-serif;font-size:10px;color:#e0c080;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;
-}
+.slot-name{font-family:'Orbitron',sans-serif;font-size:10px;color:#e0c080;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
 .slot-stats{font-size:9px;color:var(--dim);line-height:1.7;}
 .slot-lev{position:absolute;top:6px;right:8px;font-size:8px;color:var(--gold);}
-.slot-del{
-  position:absolute;bottom:6px;right:8px;background:none;border:none;
-  color:#662222;font-size:13px;cursor:pointer;padding:2px;
-}
+.slot-del{position:absolute;bottom:6px;right:8px;background:none;border:none;color:#662222;font-size:13px;cursor:pointer;padding:2px;}
 .exp-bar-wrap{height:3px;background:#111;border-radius:2px;margin-top:3px;}
 .exp-bar{height:3px;border-radius:2px;background:var(--gold);transition:width .4s;}
-.rare-badge{
-  display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;margin-bottom:2px;
-}
-.r-N{background:#1a1a1a;color:#666;}
-.r-R{background:#0a1428;color:#4488ff;}
-.r-SR{background:#140028;color:#aa44ff;}
-.r-SSR{background:#281400;color:#ffd700;}
+.rare-badge{display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;margin-bottom:2px;}
+.r-N{background:#1a1a1a;color:#666;}.r-R{background:#0a1428;color:#4488ff;}.r-SR{background:#140028;color:#aa44ff;}.r-SSR{background:#281400;color:#ffd700;}
 
-/* ===== SCAN ===== */
-.cam-wrap{
-  position:relative;width:100%;height:220px;
-  background:#000;border-radius:8px;overflow:hidden;margin-bottom:10px;
-}
-.cam-wrap video{width:100%;height:100%;object-fit:cover;}
-.cam-wrap canvas{display:none;}
-.scan-line{
-  position:absolute;left:0;right:0;height:2px;
-  background:var(--red);box-shadow:0 0 8px var(--red);
-  animation:scanAnim 1.5s linear infinite;z-index:5;
-}
-@keyframes scanAnim{0%{top:0}100%{top:100%}}
+/* カメラ */
+.cam-wrap{position:relative;width:100%;background:#000;border-radius:8px;overflow:hidden;margin-bottom:10px;display:none;}
+.cam-wrap video{width:100%;display:block;}
+.scan-guide{position:absolute;top:50%;left:10%;right:10%;height:2px;background:rgba(255,200,0,0.7);transform:translateY(-50%);z-index:5;box-shadow:0 0 8px rgba(255,200,0,0.9);}
+.scan-hint{position:absolute;top:calc(50% - 20px);width:100%;text-align:center;z-index:6;color:rgba(255,255,255,0.8);font-size:10px;}
 .corner{position:absolute;width:16px;height:16px;border-color:var(--red);border-style:solid;z-index:6;}
-.corner.tl{top:6px;left:6px;border-width:2px 0 0 2px;}
-.corner.tr{top:6px;right:6px;border-width:2px 2px 0 0;}
-.corner.bl{bottom:6px;left:6px;border-width:0 0 2px 2px;}
-.corner.br{bottom:6px;right:6px;border-width:0 2px 2px 0;}
+.corner.tl{top:8px;left:8px;border-width:2px 0 0 2px;}.corner.tr{top:8px;right:8px;border-width:2px 2px 0 0;}
+.corner.bl{bottom:8px;left:8px;border-width:0 0 2px 2px;}.corner.br{bottom:8px;right:8px;border-width:0 2px 2px 0;}
 
-/* ===== WARRIOR PREVIEW ===== */
-.warrior-preview{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:10px;padding:14px;margin-bottom:12px;
-  display:none;
-}
+.warrior-preview{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;display:none;}
 .warrior-preview.show{display:block;}
 .warrior-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
-.warrior-icon{
-  width:64px;height:64px;border-radius:10px;background:#1a1a22;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  font-size:32px;border:1px solid var(--border);
-}
+.warrior-icon{width:64px;height:64px;border-radius:10px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid var(--border);}
 .warrior-meta{flex:1;}
 .warrior-name{font-family:'Orbitron',sans-serif;font-size:13px;color:#e0c080;margin-bottom:4px;}
-.lev-badge{
-  display:inline-block;background:linear-gradient(135deg,#332200,#554400);
-  border:1px solid var(--gold);color:var(--gold);
-  font-size:9px;padding:1px 7px;border-radius:3px;margin-bottom:4px;
-}
-
-/* ===== STAT BARS ===== */
+.lev-badge{display:inline-block;background:linear-gradient(135deg,#332200,#554400);border:1px solid var(--gold);color:var(--gold);font-size:9px;padding:1px 7px;border-radius:3px;margin-bottom:4px;}
 .stat-row{display:flex;align-items:center;gap:8px;margin:5px 0;}
 .stat-lbl{font-size:9px;color:var(--dim);width:26px;}
 .stat-track{flex:1;height:6px;background:#1a1a22;border-radius:3px;overflow:hidden;}
 .stat-fill{height:100%;border-radius:3px;transition:width .5s;}
 .stat-num{font-size:10px;width:28px;text-align:right;}
-
-/* ===== MSG ===== */
 .msg{font-size:10px;padding:8px 10px;border-radius:6px;margin-bottom:8px;line-height:1.5;}
 .msg-info{background:#050f1a;border:1px solid #003366;color:#6699cc;}
 .msg-ok{background:#051005;border:1px solid #004400;color:var(--green);}
 .msg-warn{background:#1a0500;border:1px solid #662200;color:#cc6644;}
-
-/* ===== BUTTONS ===== */
-.btn{
-  font-family:'Share Tech Mono',monospace;font-size:11px;
-  padding:11px 14px;border:none;border-radius:7px;
-  cursor:pointer;letter-spacing:1px;
-  display:block;width:100%;text-align:center;margin-bottom:8px;
-  transition:opacity .15s,transform .1s;
-}
+.btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:11px 14px;border:none;border-radius:7px;cursor:pointer;letter-spacing:1px;display:block;width:100%;text-align:center;margin-bottom:8px;transition:opacity .15s,transform .1s;}
 .btn:active{transform:scale(.97);}
 .btn:disabled{opacity:.3;cursor:not-allowed;transform:none;}
 .btn-primary{background:linear-gradient(135deg,#660000,#cc0000);color:#fff;}
 .btn-secondary{background:var(--panel);border:1px solid var(--red);color:var(--red);}
 .btn-ghost{background:var(--panel);border:1px solid var(--border);color:var(--dim);}
-.btn-battle{
-  background:linear-gradient(135deg,#880000,#ff2200);color:#fff;
-  font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;
-  box-shadow:0 0 15px rgba(255,34,0,.4);
-}
+.btn-battle{background:linear-gradient(135deg,#880000,#ff2200);color:#fff;font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;box-shadow:0 0 15px rgba(255,34,0,.4);}
 .btn-gold{background:linear-gradient(135deg,#554400,#aa8800);color:#fff;}
 .btn-flee{background:linear-gradient(135deg,#223300,#446600);color:#aadd44;border:1px solid #446600;}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-
-/* ===== BATTLE ===== */
 .arena{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
-.fighter{
-  background:#08080f;border-radius:8px;padding:10px;
-  display:flex;align-items:center;gap:10px;margin-bottom:8px;
-}
-.fighter.p1{border:1px solid var(--red);}
-.fighter.p2{border:1px solid var(--blue);}
-.fighter-icon{
-  width:48px;height:48px;border-radius:7px;background:#1a1a22;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;
-}
+.fighter{background:#08080f;border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.fighter.p1{border:1px solid var(--red);}.fighter.p2{border:1px solid var(--blue);}
+.fighter-icon{width:48px;height:48px;border-radius:7px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;}
 .fighter-info{flex:1;min-width:0;}
 .fighter-name{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
 .fighter-hp-bar{height:6px;background:#1a1a22;border-radius:3px;overflow:hidden;margin-bottom:2px;}
 .fighter-hp-fill{height:100%;border-radius:3px;transition:width .4s;}
 .fighter-hp-num{font-size:9px;}
 .vs-line{text-align:center;font-family:'Orbitron',sans-serif;font-size:14px;color:var(--red);text-shadow:0 0 10px rgba(255,34,0,.6);padding:4px 0;}
-.battle-log{
-  background:#030305;border:1px solid var(--border);border-radius:6px;
-  padding:10px;min-height:100px;max-height:200px;
-  font-size:12px;line-height:1.9;overflow-y:auto;
-  white-space:pre-wrap;word-break:break-word;
-}
-
-/* ===== MODAL ===== */
-.overlay{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.88);z-index:300;
-  align-items:center;justify-content:center;padding:16px;
-}
+.battle-log{background:#030305;border:1px solid var(--border);border-radius:6px;padding:10px;min-height:100px;max-height:200px;font-size:12px;line-height:1.9;overflow-y:auto;white-space:pre-wrap;word-break:break-word;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;align-items:center;justify-content:center;padding:16px;}
 .overlay.show{display:flex;}
-.modal{
-  background:var(--panel);border:1px solid var(--red);
-  border-radius:12px;padding:22px 18px;width:100%;max-width:320px;
-  text-align:center;box-shadow:0 0 40px rgba(255,34,0,.3);
-}
-.modal-title{
-  font-family:'Orbitron',sans-serif;font-size:20px;
-  color:var(--red);margin-bottom:8px;
-  text-shadow:0 0 15px rgba(255,34,0,.6);
-}
+.modal{background:var(--panel);border:1px solid var(--red);border-radius:12px;padding:22px 18px;width:100%;max-width:320px;text-align:center;box-shadow:0 0 40px rgba(255,34,0,.3);}
+.modal-title{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--red);margin-bottom:8px;text-shadow:0 0 15px rgba(255,34,0,.6);}
 .modal-sub{font-size:12px;color:#e0c080;margin-bottom:8px;}
-
-/* ===== RECRUIT CARD ===== */
-.recruit-card{
-  display:flex;align-items:center;gap:10px;
-  background:#08080f;border:1px solid var(--border);
-  border-radius:8px;padding:10px;margin-bottom:12px;text-align:left;
-}
-.recruit-icon{
-  width:48px;height:48px;border-radius:7px;background:#1a1a22;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;
-}
+.recruit-card{display:flex;align-items:center;gap:10px;background:#08080f;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px;text-align:left;}
+.recruit-icon{width:48px;height:48px;border-radius:7px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;}
 .recruit-info{flex:1;min-width:0;}
 .recruit-name{font-size:11px;color:#e0c080;margin-bottom:2px;}
 .recruit-stats{font-size:9px;color:var(--dim);}
-
-/* ===== SWAP ===== */
 .swap-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
-.swap-item{
-  display:flex;align-items:center;gap:8px;
-  background:#08080f;border:1px solid var(--border);
-  border-radius:7px;padding:8px;cursor:pointer;text-align:left;
-}
-.swap-item:hover{border-color:var(--red);}
-.swap-icon{
-  width:40px;height:40px;border-radius:6px;background:#1a1a22;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;
-}
-
-input[type=text],input[type=number]{
-  width:100%;background:#08080f;border:1px solid var(--border);
-  border-radius:6px;padding:11px 12px;color:#e0c080;
-  font-size:15px;font-family:'Share Tech Mono',monospace;
-  letter-spacing:2px;margin-bottom:8px;
-}
+.swap-item{display:flex;align-items:center;gap:8px;background:#08080f;border:1px solid var(--border);border-radius:7px;padding:8px;cursor:pointer;text-align:left;}
+.swap-icon{width:40px;height:40px;border-radius:6px;background:#1a1a22;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+input[type=text]{width:100%;background:#08080f;border:1px solid var(--border);border-radius:6px;padding:11px 12px;color:#e0c080;font-size:16px;font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:8px;}
 input:focus{outline:none;border-color:var(--red);}
-
 .hidden{display:none!important;}
-::-webkit-scrollbar{width:3px;}
-::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
 </style>
 </head>
 <body>
 
 <!-- HOME -->
-<div class="screen active" id="s-home">
+<div id="s-home">
   <div class="home-glow"></div>
   <div class="home-content">
     <div class="home-sub">☠ SCAN &amp; FIGHT ☠</div>
@@ -316,42 +124,37 @@ input:focus{outline:none;border-color:var(--red);}
 </div>
 
 <!-- MAIN -->
-<div class="screen" id="s-main">
-
-  <!-- ナビ -->
+<div id="s-main">
   <div class="nav">
     <button class="nav-btn active" onclick="showTab('party')" id="nav-party">⚔ パーティ</button>
     <button class="nav-btn" onclick="showTab('scan')" id="nav-scan">📷 スキャン</button>
     <button class="nav-btn" onclick="showTab('battle')" id="nav-battle">🔥 バトル</button>
   </div>
 
-  <!-- PARTY TAB -->
+  <!-- PARTY -->
   <div class="tab active" id="tab-party">
     <div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;">Party Members</div>
     <div id="party-list"></div>
     <button class="btn btn-battle" id="btn-to-battle" onclick="showTab('battle')" disabled>🔥 バトルへ出撃</button>
   </div>
 
-  <!-- SCAN TAB -->
+  <!-- SCAN -->
   <div class="tab" id="tab-scan">
-    <div id="scan-locked" class="msg msg-warn hidden">
-      最初の戦士はバトル勝利で仲間にします。まずバトルタブへ！
-    </div>
+    <div id="scan-locked" class="msg msg-warn hidden">最初の戦士はバトル勝利で仲間にします。まずバトルへ！</div>
     <div id="scan-open">
       <div class="card">
         <div class="card-title">バーコードをスキャン</div>
-        <div class="cam-wrap hidden" id="cam-p1">
-          <div class="scan-line"></div>
+        <div class="cam-wrap" id="cam-p1">
+          <video id="video-p1" playsinline autoplay muted></video>
+          <div class="scan-guide"></div>
+          <div class="scan-hint">バーコードをこの線に合わせて</div>
           <div class="corner tl"></div><div class="corner tr"></div>
           <div class="corner bl"></div><div class="corner br"></div>
-          <div style="position:absolute;top:50%;left:5%;right:5%;height:2px;background:rgba(255,200,0,0.6);transform:translateY(-50%);z-index:7;box-shadow:0 0 6px rgba(255,200,0,0.8);"></div>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;color:rgba(255,255,255,0.7);font-size:10px;text-align:center;white-space:nowrap;background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:4px;">バーコードをこの線に合わせて</div>
         </div>
         <div id="scan-msg" class="msg msg-info hidden"></div>
         <button class="btn btn-primary" id="btn-scan-p1" onclick="startScan('p1')">📷 スキャン開始</button>
+        <button class="btn btn-ghost hidden" id="btn-stop-p1" onclick="stopScan('p1')">■ スキャン停止</button>
       </div>
-
-      <!-- 戦士プレビュー -->
       <div class="warrior-preview" id="w-preview">
         <div class="warrior-head">
           <div class="warrior-icon" id="prev-icon">❓</div>
@@ -361,22 +164,11 @@ input:focus{outline:none;border-color:var(--red);}
             <div class="warrior-name" id="prev-name">---</div>
           </div>
         </div>
-        <div class="stat-row">
-          <div class="stat-lbl">HP</div>
-          <div class="stat-track"><div class="stat-fill" id="prev-hp-bar" style="background:var(--green);width:0%"></div></div>
-          <div class="stat-num" id="prev-hp">-</div>
-        </div>
-        <div class="stat-row">
-          <div class="stat-lbl">AT</div>
-          <div class="stat-track"><div class="stat-fill" id="prev-at-bar" style="background:var(--red);width:0%"></div></div>
-          <div class="stat-num" id="prev-at">-</div>
-        </div>
-        <div class="stat-row">
-          <div class="stat-lbl">DF</div>
-          <div class="stat-track"><div class="stat-fill" id="prev-df-bar" style="background:var(--blue);width:0%"></div></div>
-          <div class="stat-num" id="prev-df">-</div>
-        </div>
-        <div style="margin-top:12px;" class="btn-row">
+        <div class="stat-row"><div class="stat-lbl">HP</div><div class="stat-track"><div class="stat-fill" id="prev-hp-bar" style="background:var(--green);width:0%"></div></div><div class="stat-num" id="prev-hp">-</div></div>
+        <div class="stat-row"><div class="stat-lbl">AT</div><div class="stat-track"><div class="stat-fill" id="prev-at-bar" style="background:var(--red);width:0%"></div></div><div class="stat-num" id="prev-at">-</div></div>
+        <div class="stat-row"><div class="stat-lbl">DF</div><div class="stat-track"><div class="stat-fill" id="prev-df-bar" style="background:var(--blue);width:0%"></div></div><div class="stat-num" id="prev-df">-</div></div>
+        <div id="prev-special" style="display:none;font-size:12px;text-align:center;padding:8px;border-radius:6px;margin:8px 0;white-space:pre;"></div>
+        <div class="btn-row" style="margin-top:12px;">
           <button class="btn btn-secondary" onclick="addFirstWarrior()">⚔ 最初の戦士にする</button>
           <button class="btn btn-ghost" onclick="resetScan()">✕ やり直す</button>
         </div>
@@ -384,26 +176,25 @@ input:focus{outline:none;border-color:var(--red);}
     </div>
   </div>
 
-  <!-- BATTLE TAB -->
+  <!-- BATTLE -->
   <div class="tab" id="tab-battle">
-    <!-- P2スキャン -->
+    <div id="cooldown-msg" class="msg msg-warn hidden"></div>
     <div id="p2-scan-area">
       <div class="card">
         <div class="card-title">敵のバーコードをスキャン（P2）</div>
-        <div class="cam-wrap hidden" id="cam-p2">
-          <div class="scan-line"></div>
+        <div class="cam-wrap" id="cam-p2">
+          <video id="video-p2" playsinline autoplay muted></video>
+          <div class="scan-guide"></div>
+          <div class="scan-hint">バーコードをこの線に合わせて</div>
           <div class="corner tl"></div><div class="corner tr"></div>
           <div class="corner bl"></div><div class="corner br"></div>
-          <div style="position:absolute;top:50%;left:5%;right:5%;height:2px;background:rgba(255,200,0,0.6);transform:translateY(-50%);z-index:7;box-shadow:0 0 6px rgba(255,200,0,0.8);"></div>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;color:rgba(255,255,255,0.7);font-size:10px;text-align:center;white-space:nowrap;background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:4px;">バーコードをこの線に合わせて</div>
         </div>
         <div id="p2-msg" class="msg msg-info hidden"></div>
         <button class="btn btn-secondary" id="btn-scan-p2" onclick="startScan('p2')">📷 敵をスキャン</button>
+        <button class="btn btn-ghost hidden" id="btn-stop-p2" onclick="stopScan('p2')">■ スキャン停止</button>
       </div>
     </div>
-    <!-- アリーナ -->
     <div class="arena hidden" id="arena">
-      <!-- 現在の戦士インジケーター -->
       <div id="current-fighter-bar" style="font-size:10px;color:var(--dim);text-align:center;margin-bottom:8px;letter-spacing:1px;"></div>
       <div class="fighter p1" id="f-p1">
         <div class="fighter-icon" id="fi-p1">⚔️</div>
@@ -424,38 +215,36 @@ input:focus{outline:none;border-color:var(--red);}
       </div>
       <div class="battle-log" id="battle-log">バトル開始を待っています...</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-        <button class="btn btn-battle" id="btn-battle-start" onclick="executeBattle()">⚔ BATTLE START</button>
+        <button class="btn btn-battle" id="btn-battle-start" onclick="executeBattle()">⚔ BATTLE</button>
         <button class="btn btn-flee" id="btn-flee" onclick="fleeBattle()" disabled>🏃 にげる</button>
       </div>
     </div>
     <button class="btn btn-ghost" onclick="resetBattle()" style="margin-top:4px">↺ リセット</button>
   </div>
-
-<!-- フラッシュオーバーレイ -->
-<div id="flash-overlay" style="display:none;position:fixed;inset:0;z-index:500;pointer-events:none;"></div>
+</div>
 
 <!-- ENDING -->
-<div class="screen" id="s-ending" style="display:none;background:#000;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px;">
+<div id="s-ending" style="display:none;min-height:100vh;background:#000;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px;">
   <div style="font-size:80px;margin-bottom:16px;">👑</div>
   <div style="font-family:'Orbitron',sans-serif;font-size:24px;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.8);margin-bottom:12px;">MASTER!</div>
   <div style="font-size:12px;color:var(--dim);line-height:2;margin-bottom:24px;">LEV 10 到達！<br/>真のバトルマスターになった！！</div>
   <button class="btn btn-battle" onclick="restartGame()" style="max-width:280px;">もう一度挑む</button>
 </div>
 
-<!-- RECRUIT MODAL -->
+<!-- フラッシュ -->
+<div id="flash-overlay" style="display:none;position:fixed;inset:0;z-index:500;pointer-events:none;"></div>
+
+<!-- MODALS -->
 <div class="overlay" id="modal-recruit">
   <div class="modal">
     <div class="modal-title">🏆 VICTORY!</div>
     <div class="modal-sub" id="rec-p1-name"></div>
     <div id="rec-exp" class="msg msg-ok" style="margin-bottom:12px;"></div>
-    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+    <div style="border-top:1px solid var(--border);padding-top:12px;">
       <div style="font-size:11px;color:#cc8844;margin-bottom:8px;">敵将を仲間にする？</div>
       <div class="recruit-card">
         <div class="recruit-icon" id="rec-icon">❓</div>
-        <div class="recruit-info">
-          <div class="recruit-name" id="rec-name"></div>
-          <div class="recruit-stats" id="rec-stats"></div>
-        </div>
+        <div class="recruit-info"><div class="recruit-name" id="rec-name"></div><div class="recruit-stats" id="rec-stats"></div></div>
       </div>
       <div class="btn-row">
         <button class="btn btn-gold" onclick="recruitYes()">✔ 仲間にする</button>
@@ -464,8 +253,6 @@ input:focus{outline:none;border-color:var(--red);}
     </div>
   </div>
 </div>
-
-<!-- SWAP MODAL -->
 <div class="overlay" id="modal-swap">
   <div class="modal">
     <div class="modal-title" style="font-size:16px;">⚠ パーティ満員</div>
@@ -474,8 +261,6 @@ input:focus{outline:none;border-color:var(--red);}
     <button class="btn btn-ghost" onclick="cancelSwap()">✕ 仲間にしない</button>
   </div>
 </div>
-
-<!-- DEFEAT MODAL -->
 <div class="overlay" id="modal-defeat">
   <div class="modal">
     <div class="modal-title" style="color:var(--blue);">💀 DEFEAT</div>
@@ -484,810 +269,348 @@ input:focus{outline:none;border-color:var(--red);}
     <button class="btn btn-primary" onclick="closeDefeat()">続ける</button>
   </div>
 </div>
-
-<!-- FIRST GUIDE MODAL -->
 <div class="overlay" id="modal-first">
   <div class="modal">
     <div class="modal-title" style="font-size:16px;">⚔ 最初の戦士</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.7;">
-      バーコードをスキャンして<br/>最初の戦士を召喚せよ！<br/>その後はバトルで勝利して<br/>仲間を増やせ。
-    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.7;">バーコードをスキャンして<br/>最初の戦士を召喚せよ！<br/>その後はバトルで勝利して<br/>仲間を増やせ。</div>
     <button class="btn btn-primary" onclick="closeFirst()">スキャンへ</button>
   </div>
 </div>
-
-<!-- HERO NAME MODAL -->
 <div class="overlay" id="modal-heroname">
   <div class="modal">
     <div class="modal-title" style="font-size:16px;">⚔ 主人公の名前</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">
-      あなたの戦士の名前を<br/>入力してください
-    </div>
-    <input type="text" id="input-heroname" placeholder="名前を入力..." maxlength="10"
-      style="text-align:center;font-size:16px;margin-bottom:12px;"
-      onkeydown="if(event.key==='Enter')confirmHeroName()"/>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">あなたの戦士の名前を<br/>入力してください</div>
+    <input type="text" id="input-heroname" placeholder="名前を入力..." maxlength="10" style="text-align:center;"/>
     <button class="btn btn-primary" onclick="confirmHeroName()">決定</button>
   </div>
 </div>
 
 <script>
-
-// ===== CONSTANTS =====
-const MAX_PARTY      = 5;
-const COOLDOWN_WIN   = 1; // 勝利後の休憩回数
-const COOLDOWN_LOSE  = 3; // 敗北後の休憩回数
-const BOSS_THRESHOLD = 7; // 末尾2桁が07以下でボス（約7%）
-const FLASH_BIG      = 40; // この値以上のダメージでフラッシュ
+// ===== CONFIG =====
+const MAX_PARTY=5, COOLDOWN_WIN=1, COOLDOWN_LOSE=3, BOSS_THRESHOLD=7, FLASH_BIG=40;
+const RARE_THR={SSR:97,SR:85,R:60};
+const RARE_BONUS={N:{hp:0,at:0,df:0},R:{hp:20,at:5,df:5},SR:{hp:50,at:15,df:10},SSR:{hp:100,at:30,df:20}};
+const ICONS_M=['⚔️','🗡️','🔱','💀','🔥','⚡','🌑','👁️','🐉','🦅','🐺','🦁','🌊','🏹','🔮'];
+const ICONS_F=['🌸','💎','🌙','🌺','⭐','🦋','🌹','💫','🌊','🌠','💜','🌻'];
+const NAMES_M=['悟空','ベジータ','ピッコロ','フリーザ','セル','トランクス','悟飯','クリリン','ブロリー','ターレス','ルフィ','ゾロ','サンジ','エース','白ひげ','赤犬','黄猿','青キジ','シャンクス','バギー','クロコダイル','黒ひげ','ミホーク','ドフラミンゴ','カイドウ','ビッグマム','ロー','キッド','ルッチ','アーロン','ナルト','サスケ','カカシ','ネジ','リー','ガアラ','大蛇丸','自来也','イタチ','ペイン','一護','白哉','恋次','日番谷','砕蜂','藍染','ウルキオラ','グリムジョー','ノイトラ','バラガン','幽助','桑原','蔵馬','飛影','戸愚呂','仙水','鴉','鈴木','ゴン','キルア','クラピカ','レオリオ','ヒソカ','クロロ','イルミ','メルエム','ネテロ','炭治郎','善逸','伊之助','義勇','煉獄','宇髄','時透','鬼舞辻','上弦壱','上弦弐','猗窩座','童磨','黒死牟','星矢','紫龍','氷河','瞬','一輝','シャカ','ミロ','アイオリア','ムウ','サガ','ケンシロウ','ラオウ','トキ','ジャギ','シン','カイオウ','ジョナサン','ジョセフ','承太郎','仗助','ジョルノ','ディオ','吉良吉影','ブチャラティ','ミスタ','プロシュート','剣心','斎藤','佐之助','志々雄','宗次郎','蒼紫','銀時','沖田','土方','近藤','高杉','桂','大空翼','若林','日向小次郎','岬','桜木','流川','赤木','三井','仙道','牧','ナツ','グレイ','ガジル','ラクサス','ジェラール','ゼレフ','マッシュ','日向翔陽','影山','月島','ガンマ1号','ビノールト','エスタ'];
+const NAMES_F=['ブルマ','チチ','ビーデル','18号','パン','ナミ','ロビン','ハンコック','ペローナ','ヴィオラ','レベッカ','シラホシ','キャロット','サクラ','ヒナタ','テンテン','綱手','小南','香燐','織姫','四楓院夜一','砕蜂','松本乱菊','ぼたん','雪菜','螢子','禰豆子','甘露寺','カナヲ','カナエ','ビスケット','パーム','神楽','お妙','月詠','エルザ','ルーシィ','ウェンディ','ミラジェーン','アテナ','シャイナ','薫','恵','操','イシュタル','ルナ','セレナ','マリア'];
 
 // ===== STATE =====
-let party        = [];
-let selP1        = -1;
-let restCnt      = COOLDOWN_WIN; // 初回はバトル可能
-let restRequired = COOLDOWN_WIN;
-let battleCnt    = 0;
-let p2Warrior    = null;
-let p2MaxHp      = 0; // ボス用：残りHPを引き継ぐ
-let pendingW     = null;
-let heroName     = '';
-let currentFighterIdx = 0; // 現在出撃中の戦士インデックス
-let isBattleInProgress = false;
-let quaggaRunning = false;
-let lastCode='', lastTime=0;
-let scanTarget = null;
+let party=[],selP1=-1,restCnt=COOLDOWN_WIN,restRequired=COOLDOWN_WIN,battleCnt=0;
+let p2Warrior=null,p2MaxHp=0,pendingW=null,heroName='';
+let currentFighterIdx=0,_battling=false;
+let scanTarget=null,videoStream=null,scanInterval=null;
+const RC_CLS={N:'r-N',R:'r-R',SR:'r-SR',SSR:'r-SSR'};
 
 // ===== STORAGE =====
-function saveAll() {
-  try {
-    localStorage.setItem('bb_party', JSON.stringify(party));
-    localStorage.setItem('bb_meta',  JSON.stringify({selP1, restCnt, restRequired, battleCnt, heroName}));
-  } catch(e) {}
-}
-function loadAll() {
-  try {
-    const p = localStorage.getItem('bb_party');
-    const m = localStorage.getItem('bb_meta');
-    if (p) party = JSON.parse(p);
-    if (m) {
-      const o = JSON.parse(m);
-      selP1 = o.selP1 ?? -1;
-      restCnt = o.restCnt ?? COOLDOWN_WIN;
-      restRequired = o.restRequired ?? COOLDOWN_WIN;
-      battleCnt = o.battleCnt ?? 0;
-      heroName = o.heroName || '';
-    } else {
-      restCnt = COOLDOWN_WIN;
-      restRequired = COOLDOWN_WIN;
-    }
-    if (selP1 >= party.length) selP1 = -1;
-  } catch(e) { party=[]; restCnt=COOLDOWN_WIN; restRequired=COOLDOWN_WIN; }
-}
+function saveAll(){try{localStorage.setItem('bb_p',JSON.stringify(party));localStorage.setItem('bb_m',JSON.stringify({selP1,restCnt,restRequired,battleCnt,heroName}));}catch(e){}}
+function loadAll(){try{const p=localStorage.getItem('bb_p'),m=localStorage.getItem('bb_m');if(p)party=JSON.parse(p);if(m){const o=JSON.parse(m);selP1=o.selP1??-1;restCnt=o.restCnt??COOLDOWN_WIN;restRequired=o.restRequired??COOLDOWN_WIN;battleCnt=o.battleCnt??0;heroName=o.heroName||'';}else{restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}if(selP1>=party.length)selP1=-1;}catch(e){party=[];restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}}
 
 // ===== CALC =====
-function calcRarity(digits) {
-  const n = parseInt(digits.slice(-2)) || 0;
-  if (n >= RARE_THR.SSR) return 'SSR';
-  if (n >= RARE_THR.SR)  return 'SR';
-  if (n >= RARE_THR.R)   return 'R';
-  return 'N';
+function calcRarity(d){const n=parseInt(d.slice(-2))||0;if(n>=RARE_THR.SSR)return 'SSR';if(n>=RARE_THR.SR)return 'SR';if(n>=RARE_THR.R)return 'R';return 'N';}
+function calcSpecial(d){if(d.slice(-3)==='999')return{type:'SPECIAL',levBonus:1,label:'SPECIAL 999\nLEV +1 ボーナス！',color:'var(--purple)'};if(d.slice(-4)==='5150')return{type:'MEGA',levBonus:2,label:'MEGA 5150\nLEV +2 ボーナス！',color:'var(--gold)'};return null;}
+function calcStats(code,isP2){
+  const d=code.replace(/\D/g,'');if(d.length<6)return null;
+  let hp=0,at=0,df=0;
+  for(let i=0;i<d.length;i++){const n=parseInt(d[i]);if(i%3===0)hp+=n;else if(i%3===1)at+=n;else df+=n;}
+  const seed=parseInt(d.slice(0,5))||1;
+  hp=60+(hp*9+seed%40)%121;at=15+(at*4+seed%20)%46;df=8+(df*3+seed%15)%33;
+  const rarity=calcRarity(d),rb=RARE_BONUS[rarity];
+  hp+=rb.hp;at+=rb.at;df+=rb.df;
+  let isBoss=false;
+  if(isP2&&(parseInt(d.slice(-2))||0)<=BOSS_THRESHOLD){isBoss=true;const m=1.5+(seed%100)/66.7;hp=Math.min(500,Math.round(hp*m));at=Math.min(200,Math.round(at*m));df=Math.min(200,Math.round(df*m));}
+  let name,icon,isFemale=false;
+  if(isP2){isFemale=(parseInt(d.slice(-1))%5===0);if(isFemale){name=NAMES_F[parseInt(d.slice(-3))%NAMES_F.length];icon=ICONS_F[parseInt(d.slice(-4))%ICONS_F.length];}else{name=NAMES_M[parseInt(d.slice(-3))%NAMES_M.length];icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}if(isBoss)name='[BOSS]'+name;}
+  else{name=heroName||'ヒーロー';icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}
+  const special=calcSpecial(d);
+  return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale,lev:1,exp:0,code:d,special,isBoss};
 }
 
-// ボス判定（末尾2桁が07以下 ＝ 約7%）
-function isBossCode(d) {
-  const n = parseInt(d.slice(-2)) || 0;
-  return n <= BOSS_THRESHOLD;
+// ===== SCREEN =====
+function enterMain(){
+  document.getElementById('s-home').style.display='none';
+  document.getElementById('s-main').style.display='block';
+  renderParty();updateScanTab();updateCooldownHint();
+  if(party.length===0){if(!heroName)showModal('modal-heroname');else showModal('modal-first');}
 }
-
-// スペシャルボーナス判定
-function calcSpecialBonus(d) {
-  const last3 = d.slice(-3);
-  const last4 = d.slice(-4);
-  if (last3 === '999') return { type:'SPECIAL', levBonus:1, label:'★ SPECIAL 999 ★', color:'var(--purple)' };
-  if (last4 === '5150') return { type:'MEGA', levBonus:2, label:'★★ MEGA 5150 ★★', color:'var(--gold)' };
-  return null;
+function confirmHeroName(){
+  const v=document.getElementById('input-heroname').value.trim();
+  if(!v){alert('名前を入力してください');return;}
+  heroName=v;saveAll();closeModal('modal-heroname');showModal('modal-first');
 }
-
-function calcStats(code, isP2) {
-  const d = code.replace(/\D/g,'');
-  if (d.length < 6) return null;
-  let hp=0, at=0, df=0;
-  for (let i=0; i<d.length; i++) {
-    const n = parseInt(d[i]);
-    if (i%3===0) hp+=n; else if(i%3===1) at+=n; else df+=n;
-  }
-  const seed = parseInt(d.slice(0,5)) || 1;
-  hp = 60 + (hp*9 + seed%40) % 121;
-  at = 15 + (at*4 + seed%20) % 46;
-  df = 8  + (df*3 + seed%15) % 33;
-  const rarity = calcRarity(d);
-  const rb = RARE_BONUS[rarity];
-  hp += rb.hp; at += rb.at; df += rb.df;
-
-  // ボスキャラ判定
-  let isBoss = false;
-  if (isP2 && isBossCode(d)) {
-    isBoss = true;
-    // ボスは通常の1.5〜3倍のステータス
-    const bossMult = 1.5 + (seed % 100) / 66.7; // 1.5〜3.0倍
-    hp = Math.min(500, Math.round(hp * bossMult));
-    at = Math.min(200, Math.round(at * bossMult));
-    df = Math.min(200, Math.round(df * bossMult));
-  }
-
-  // 敵キャラ：5分の1の確率で女性
-  let name, icon, isFemale = false;
-  if (isP2) {
-    isFemale = (parseInt(d.slice(-1)) % 5 === 0);
-    if (isFemale) {
-      name = NAMES_F[parseInt(d.slice(-3)) % NAMES_F.length];
-      icon = ICONS_F[parseInt(d.slice(-4)) % ICONS_F.length];
-    } else {
-      name = NAMES_M[parseInt(d.slice(-3)) % NAMES_M.length];
-      icon = ICONS_M[parseInt(d.slice(-4)) % ICONS_M.length];
-    }
-    if (isBoss) name = '【BOSS】' + name;
-  } else {
-    name = heroName || 'ヒーロー';
-    icon = ICONS_M[parseInt(d.slice(-4)) % ICONS_M.length];
-  }
-
-  const special = calcSpecialBonus(d);
-
-  return { hp, maxHp:hp, at, df, rarity, name, icon, isFemale,
-           lev:1, exp:0, code:d, special, isBoss };
-}
-
-// ===== HOME <-> MAIN =====
-function enterMain() {
-  document.getElementById('s-home').style.display = 'none';
-  document.getElementById('s-home').classList.remove('active');
-  document.getElementById('s-main').style.display = 'block';
-  document.getElementById('s-main').classList.add('active');
-  renderParty();
-  updateScanTab();
-  updateCooldownHint();
-  if (party.length === 0) {
-    if (!heroName) {
-      showModal('modal-heroname');
-    } else {
-      showModal('modal-first');
-    }
-  }
-}
-function confirmHeroName() {
-  const val = document.getElementById('input-heroname').value.trim();
-  if (!val) { alert('名前を入力してください'); return; }
-  heroName = val;
-  saveAll();
-  closeModal('modal-heroname');
-  showModal('modal-first');
-}
-function goHome() {
-  stopQuagga();
-  document.getElementById('s-main').style.display = 'none';
-  document.getElementById('s-main').classList.remove('active');
-  document.getElementById('s-home').style.display = 'flex';
-  document.getElementById('s-home').classList.add('active');
+function closeFirst(){closeModal('modal-first');showTab('scan');}
+function goHome(){
+  stopAllScan();
+  document.getElementById('s-main').style.display='none';
+  document.getElementById('s-home').style.display='flex';
   updateHomeInfo();
 }
-function updateHomeInfo() {
-  const el = document.getElementById('home-info');
-  if (party.length > 0) {
-    const top = party.reduce((a,b)=>(b.lev||1)>(a.lev||1)?b:a);
-    el.innerHTML = `パーティ <span>${party.length}/${MAX_PARTY}人</span> ／ 最強 <span>${top.name} LEV${top.lev||1}</span>`;
-  } else {
-    el.textContent = 'セーブデータなし';
-  }
-}
-function closeFirst() {
-  closeModal('modal-first');
-  // メイン画面が確実に表示されているか確認
-  document.getElementById('s-home').style.display = 'none';
-  document.getElementById('s-home').classList.remove('active');
-  document.getElementById('s-main').style.display = 'block';
-  document.getElementById('s-main').classList.add('active');
-  showTab('scan');
+function updateHomeInfo(){
+  const el=document.getElementById('home-info');
+  if(party.length>0){const top=party.reduce((a,b)=>(b.lev||1)>(a.lev||1)?b:a);el.innerHTML=`パーティ <span>${party.length}/${MAX_PARTY}人</span> ／ 最強 <span>${top.name} LEV${top.lev||1}</span>`;}
+  else el.textContent='セーブデータなし';
 }
 
 // ===== TABS =====
-function showTab(id) {
+function showTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   document.getElementById('nav-'+id).classList.add('active');
-  // 休息カウント（バトル以外に移動で+1）
-  if (id !== 'battle' && battleCnt > 0 && !canBattleNow()) {
-    restCnt = Math.min(restRequired, restCnt + 1);
-    saveAll();
-  }
+  if(id!=='battle'&&battleCnt>0&&!canBattleNow()){restCnt=Math.min(restRequired,restCnt+1);saveAll();}
   updateCooldownHint();
 }
-function updateCooldownHint() {
-  const canBattle = restCnt >= restRequired;
-  const btn = document.getElementById('btn-scan-p2');
-  if (btn) btn.disabled = !canBattle && battleCnt > 0;
+function canBattleNow(){return restCnt>=restRequired;}
+function updateCooldownHint(){
+  const can=canBattleNow();
+  const btn=document.getElementById('btn-scan-p2');
+  if(btn)btn.disabled=!can&&battleCnt>0;
+  const msg=document.getElementById('cooldown-msg');
+  if(!can&&battleCnt>0){msg.textContent=`休息中... あと${restRequired-restCnt}回行動でバトル可能`;msg.classList.remove('hidden');}
+  else msg.classList.add('hidden');
 }
-function updateScanTab() {
-  const isFirst = party.length === 0;
-  document.getElementById('scan-locked').classList.toggle('hidden', isFirst);
-  document.getElementById('scan-open').style.display = isFirst ? 'block' : 'none';
-}
+function updateScanTab(){const f=party.length===0;document.getElementById('scan-locked').classList.toggle('hidden',f);document.getElementById('scan-open').style.display=f?'block':'none';}
 
 // ===== PARTY =====
-const RC_CLS = {N:'r-N', R:'r-R', SR:'r-SR', SSR:'r-SSR'};
-function renderParty() {
-  const list = document.getElementById('party-list');
-  list.innerHTML = '';
-  for (let i=0; i<MAX_PARTY; i++) {
-    const w = party[i];
-    const div = document.createElement('div');
-    if (!w) {
-      div.className = 'party-slot empty';
-      div.innerHTML = `<span>空きスロット ${i+1}/${MAX_PARTY}</span>`;
-    } else {
-      const sel = selP1 === i;
-      const expPct = Math.min(100, w.exp||0);
-      div.className = 'party-slot' + (sel ? ' selected' : '');
-      div.onclick = () => selectP1(i);
-      div.innerHTML = `
-        <div class="slot-lev">LEV${w.lev||1}</div>
-        <div class="slot-portrait">${w.icon||'⚔️'}</div>
-        <div class="slot-info">
-          <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
-            <span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>
-          </div>
-          <div class="slot-name">${w.name}</div>
-          <div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div>
-          <div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div>
-          <div class="exp-bar-wrap"><div class="exp-bar" style="width:${expPct}%"></div></div>
-        </div>
-        <button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})">✕</button>`;
+function renderParty(){
+  const list=document.getElementById('party-list');list.innerHTML='';
+  for(let i=0;i<MAX_PARTY;i++){
+    const w=party[i],div=document.createElement('div');
+    if(!w){div.className='party-slot empty';div.innerHTML=`<span>空きスロット ${i+1}/${MAX_PARTY}</span>`;}
+    else{
+      div.className='party-slot'+(selP1===i?' selected':'');div.onclick=()=>selectP1(i);
+      const ep=Math.min(100,w.exp||0);
+      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'⚔️'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span></div><div class="slot-name">${w.name}</div><div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})">✕</button>`;
     }
     list.appendChild(div);
   }
-  document.getElementById('btn-to-battle').disabled = selP1 < 0 || party.length === 0;
+  document.getElementById('btn-to-battle').disabled=selP1<0||party.length===0;
 }
-function selectP1(i) {
-  selP1 = i; saveAll(); renderParty();
-}
-function deleteWarrior(i) {
-  if (!confirm(`「${party[i].name}」を外しますか？`)) return;
-  party.splice(i, 1);
-  if (selP1 === i) selP1 = -1; else if (selP1 > i) selP1--;
-  saveAll(); renderParty(); updateScanTab();
-}
+function selectP1(i){selP1=i;saveAll();renderParty();}
+function deleteWarrior(i){if(!confirm(`「${party[i].name}」を外しますか？`))return;party.splice(i,1);if(selP1===i)selP1=-1;else if(selP1>i)selP1--;saveAll();renderParty();updateScanTab();}
 
-// ===== SCAN =====
-function startScan(target) {
-  scanTarget = target;
-  const camId = target === 'p1' ? 'cam-p1' : 'cam-p2';
-  const cam = document.getElementById(camId);
-  cam.classList.remove('hidden');
-  if (target === 'p1') document.getElementById('btn-scan-p1').disabled = true;
-  else document.getElementById('btn-scan-p2').disabled = true;
-  startQuagga(camId, onBarcode);
-}
-function onBarcode(code) {
-  stopQuagga();
-  const camId = scanTarget === 'p1' ? 'cam-p1' : 'cam-p2';
-  document.getElementById(camId).classList.add('hidden');
+// ===== SCAN (ZXing使用) =====
+async function startScan(target){
+  scanTarget=target;
+  const videoId='video-'+target;
+  const camId='cam-'+target;
+  const btnStart=document.getElementById('btn-scan-'+target);
+  const btnStop=document.getElementById('btn-stop-'+target);
 
-  const isP2 = scanTarget === 'p2';
-  const stats = calcStats(code, isP2);
-  if (!stats) {
-    const msgId = isP2 ? 'p2-msg' : 'scan-msg';
-    showMsg(msgId, '読み取り失敗。もう一度！', 'warn');
-    if (!isP2) document.getElementById('btn-scan-p1').disabled = false;
-    else document.getElementById('btn-scan-p2').disabled = false;
-    return;
-  }
-  if (!isP2) {
-    pendingW = stats;
-    showPreview(stats);
-    showMsg('scan-msg', `✓ 読み取り成功！レア度: ${stats.rarity}`, 'ok');
-  } else {
-    p2Warrior = stats;
-    showMsg('p2-msg', `敵出現！${stats.name} [${stats.rarity}]`, 'ok');
-    setupArena();
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}
+    });
+    videoStream=stream;
+    const video=document.getElementById(videoId);
+    video.srcObject=stream;
+    await video.play();
+    document.getElementById(camId).style.display='block';
+    btnStart.classList.add('hidden');
+    btnStop.classList.remove('hidden');
+    showMsg(target==='p1'?'scan-msg':'p2-msg','バーコードをガイドラインに合わせてください','info');
+    startDecode(video,target);
+  }catch(e){
+    showMsg(target==='p1'?'scan-msg':'p2-msg','カメラの許可が必要です。URLバーの「ぁあ」→「Webサイトの設定」→カメラを許可','warn');
   }
 }
-function showPreview(w) {
-  document.getElementById('prev-icon').textContent = w.icon;
-  const rb = document.getElementById('prev-rare');
-  rb.textContent = w.rarity; rb.className = `rare-badge ${RC_CLS[w.rarity]}`;
-  document.getElementById('prev-name').textContent = w.name;
-  document.getElementById('prev-hp').textContent = w.hp;
-  document.getElementById('prev-at').textContent = w.at;
-  document.getElementById('prev-df').textContent = w.df;
-  document.getElementById('prev-hp-bar').style.width = Math.min(100, w.hp/3) + '%';
-  document.getElementById('prev-at-bar').style.width = Math.min(100, w.at/1.5) + '%';
-  document.getElementById('prev-df-bar').style.width = Math.min(100, w.df/1.2) + '%';
 
-  // スペシャルボーナス表示
-  let bonusEl = document.getElementById('prev-special-bonus');
-  if (!bonusEl) {
-    bonusEl = document.createElement('div');
-    bonusEl.id = 'prev-special-bonus';
-    bonusEl.style.cssText = 'font-size:13px;font-weight:bold;text-align:center;padding:8px;border-radius:6px;margin-bottom:8px;';
-    document.getElementById('w-preview').insertBefore(bonusEl, document.getElementById('w-preview').querySelector('.btn-row'));
-  }
-  if (w.special) {
-    bonusEl.textContent = `${w.special.label}\nLEV +${w.special.levBonus} ボーナス！`;
-    bonusEl.style.display = 'block';
-    bonusEl.style.color = w.special.color;
-    bonusEl.style.background = 'rgba(255,255,255,0.05)';
-    bonusEl.style.border = `1px solid ${w.special.color}`;
-    bonusEl.style.whiteSpace = 'pre';
-  } else {
-    bonusEl.style.display = 'none';
-  }
+function startDecode(video,target){
+  const codeReader=new ZXing.BrowserMultiFormatReader();
+  codeReader.decodeFromVideoElement(video,(result,err)=>{
+    if(result){
+      const code=result.getText();
+      stopScan(target);
+      onBarcode(code,target);
+    }
+  });
+  // codeReaderをグローバルに保持
+  window._codeReader=codeReader;
+}
 
+function stopScan(target){
+  if(window._codeReader){try{window._codeReader.reset();}catch(e){}window._codeReader=null;}
+  if(videoStream){videoStream.getTracks().forEach(t=>t.stop());videoStream=null;}
+  const camId='cam-'+target;
+  const btnStart=document.getElementById('btn-scan-'+target);
+  const btnStop=document.getElementById('btn-stop-'+target);
+  document.getElementById(camId).style.display='none';
+  if(btnStart)btnStart.classList.remove('hidden');
+  if(btnStop)btnStop.classList.add('hidden');
+}
+
+function stopAllScan(){
+  ['p1','p2'].forEach(t=>stopScan(t));
+}
+
+function onBarcode(code,target){
+  const isP2=target==='p2';
+  const stats=calcStats(code,isP2);
+  if(!stats){showMsg(isP2?'p2-msg':'scan-msg','読み取り失敗。もう一度！','warn');return;}
+  if(!isP2){pendingW=stats;showPreview(stats);showMsg('scan-msg',`✓ 読み取り成功！レア度: ${stats.rarity}`,'ok');}
+  else{p2Warrior=stats;showMsg('p2-msg',`敵出現！${stats.name} [${stats.rarity}]`+(stats.isBoss?' 👑BOSS':''),'ok');setupArena();}
+}
+
+function showPreview(w){
+  document.getElementById('prev-icon').textContent=w.icon;
+  const rb=document.getElementById('prev-rare');rb.textContent=w.rarity;rb.className=`rare-badge ${RC_CLS[w.rarity]}`;
+  document.getElementById('prev-name').textContent=w.name;
+  document.getElementById('prev-hp').textContent=w.hp;document.getElementById('prev-at').textContent=w.at;document.getElementById('prev-df').textContent=w.df;
+  document.getElementById('prev-hp-bar').style.width=Math.min(100,w.hp/3)+'%';
+  document.getElementById('prev-at-bar').style.width=Math.min(100,w.at/1.5)+'%';
+  document.getElementById('prev-df-bar').style.width=Math.min(100,w.df/1.2)+'%';
+  const sp=document.getElementById('prev-special');
+  if(w.special){sp.textContent=w.special.label;sp.style.color=w.special.color;sp.style.background='rgba(255,255,255,0.05)';sp.style.border=`1px solid ${w.special.color}`;sp.style.display='block';}
+  else sp.style.display='none';
   document.getElementById('w-preview').classList.add('show');
 }
-function addFirstWarrior() {
-  if (!pendingW) return;
-  const w = {...pendingW};
-  // スペシャルボーナスでLEVアップ
-  if (w.special) {
-    w.lev = 1 + w.special.levBonus;
-    // レベル分のステータスボーナスも適用
-    for (let i=0; i<w.special.levBonus; i++) {
-      w.hp += 10; w.maxHp += 10; w.at += 3; w.df += 2;
-    }
-  }
-  party.push(w);
-  selP1 = 0;
-  saveAll(); renderParty(); resetScan(); updateScanTab();
-  showTab('party');
+
+function addFirstWarrior(){
+  if(!pendingW)return;
+  const w={...pendingW};
+  if(w.special){w.lev=1+w.special.levBonus;for(let i=0;i<w.special.levBonus;i++){w.hp+=10;w.maxHp+=10;w.at+=3;w.df+=2;}}
+  party.push(w);selP1=0;saveAll();renderParty();resetScan();updateScanTab();showTab('party');
 }
-function resetScan() {
-  stopQuagga();
-  pendingW = null;
-  document.getElementById('cam-p1').classList.add('hidden');
-  document.getElementById('w-preview').classList.remove('show');
-  document.getElementById('scan-msg').classList.add('hidden');
-  document.getElementById('btn-scan-p1').disabled = false;
-}
+function resetScan(){stopScan('p1');pendingW=null;document.getElementById('w-preview').classList.remove('show');const m=document.getElementById('scan-msg');m.classList.add('hidden');}
 
 // ===== ARENA =====
-function setupArena() {
-  const p2 = p2Warrior;
-  if (!p2 || selP1 < 0) return;
-  currentFighterIdx = selP1;
-  p2MaxHp = p2.hp;
+function setupArena(){
+  if(!p2Warrior||selP1<0)return;
+  currentFighterIdx=selP1;p2MaxHp=p2Warrior.hp;
   document.getElementById('p2-scan-area').classList.add('hidden');
   document.getElementById('arena').classList.remove('hidden');
-  updateCurrentFighterBar();
-  setFighter('p1', party[currentFighterIdx], party[currentFighterIdx].hp, party[currentFighterIdx].hp);
-  setFighter('p2', p2, p2.hp, p2MaxHp);
-  const logMsg = p2.isBoss
-    ? `⚠ BOSS出現！${p2.name}\nHP:${p2.hp} AT:${p2.at} DF:${p2.df}\n全員で倒せ！`
-    : `バトル準備完了！STARTを押せ！`;
-  document.getElementById('battle-log').textContent = logMsg;
-  document.getElementById('btn-battle-start').disabled = false;
-  document.getElementById('btn-flee').disabled = true;
+  updateFighterBar();
+  setFighter('p1',party[currentFighterIdx],party[currentFighterIdx].hp,party[currentFighterIdx].hp);
+  setFighter('p2',p2Warrior,p2Warrior.hp,p2MaxHp);
+  document.getElementById('battle-log').textContent=p2Warrior.isBoss?`BOSS出現！${p2Warrior.name}\nHP:${p2Warrior.hp} AT:${p2Warrior.at} DF:${p2Warrior.df}`:'バトル準備完了！STARTを押せ！';
+  document.getElementById('btn-battle-start').disabled=false;
+  document.getElementById('btn-flee').disabled=true;
 }
-
-function updateCurrentFighterBar() {
-  const w = party[currentFighterIdx];
-  if (!w) return;
-  const col = p2Warrior?.isBoss ? '#ff6600' : 'var(--dim)';
-  document.getElementById('current-fighter-bar').style.color = col;
-  document.getElementById('current-fighter-bar').textContent =
-    `出撃中: ${w.name} (LEV${w.lev||1}) [${currentFighterIdx+1}/${party.length}人目]`;
+function updateFighterBar(){const w=party[currentFighterIdx];if(!w)return;document.getElementById('current-fighter-bar').textContent=`出撃中: ${w.name} (LEV${w.lev||1}) [${currentFighterIdx+1}/${party.length}人目]`;}
+function setFighter(side,w,hp,maxHp){
+  const pct=Math.max(0,hp/maxHp*100),col=pct>50?'var(--green)':pct>25?'#ccaa00':'var(--red)';
+  document.getElementById(`fi-${side}`).textContent=w.icon||(side==='p1'?'⚔️':'🛡️');
+  document.getElementById(`fn-${side}`).textContent=(side==='p1'?`${w.name} LEV${w.lev||1}`:w.name+(w.isBoss?' BOSS':''));
+  document.getElementById(`fhp-${side}`).style.width=pct+'%';document.getElementById(`fhp-${side}`).style.background=col;
+  document.getElementById(`fhn-${side}`).textContent=`HP: ${hp}`;document.getElementById(`fhn-${side}`).style.color=col;
 }
-
-function setFighter(side, w, hp, maxHp) {
-  const pct = Math.max(0, hp/maxHp*100);
-  const col = pct > 50 ? 'var(--green)' : pct > 25 ? '#ccaa00' : 'var(--red)';
-  document.getElementById(`fi-${side}`).textContent = w.icon || (side==='p1'?'⚔️':'🛡️');
-  const label = side==='p1'
-    ? `${w.name} LEV${w.lev||1}`
-    : w.name + (w.isBoss ? ' BOSS' : '');
-  document.getElementById(`fn-${side}`).textContent = label;
-  document.getElementById(`fhp-${side}`).style.width = pct + '%';
-  document.getElementById(`fhp-${side}`).style.background = col;
-  document.getElementById(`fhn-${side}`).textContent = `HP: ${hp}`;
-  document.getElementById(`fhn-${side}`).style.color = col;
-}
-
-// フラッシュエフェクト
-function flash(color) {
-  const el = document.getElementById('flash-overlay');
-  el.style.background = color;
-  el.style.display = 'block';
-  el.style.opacity = '0.5';
-  let op = 0.5;
-  const fade = setInterval(() => {
-    op -= 0.05;
-    el.style.opacity = op;
-    if (op <= 0) { el.style.display = 'none'; clearInterval(fade); }
-  }, 30);
-}
-
-function canBattleNow() { return restCnt >= restRequired; }
-
-function updateCooldownHint() {
-  const can = canBattleNow();
-  const btn = document.getElementById('btn-scan-p2');
-  if (btn) btn.disabled = !can;
-  let msg = document.getElementById('cooldown-msg');
-  if (!msg) {
-    msg = document.createElement('div');
-    msg.id = 'cooldown-msg';
-    msg.className = 'msg';
-    const btab = document.getElementById('tab-battle');
-    btab.insertBefore(msg, btab.firstChild);
-  }
-  if (!can) {
-    const left = restRequired - restCnt;
-    msg.className = 'msg msg-warn';
-    msg.textContent = `休息中... あと${left}回行動でバトル可能`;
-    msg.style.display = 'block';
-  } else {
-    msg.style.display = 'none';
-  }
-}
-
-function showTab(id) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  document.getElementById('nav-'+id).classList.add('active');
-  if (id !== 'battle' && battleCnt > 0 && !canBattleNow()) {
-    restCnt = Math.min(restRequired, restCnt + 1);
-    saveAll();
-  }
-  updateCooldownHint();
-}
+function flash(color){const el=document.getElementById('flash-overlay');el.style.background=color;el.style.display='block';el.style.opacity='0.5';let op=0.5;const f=setInterval(()=>{op-=0.06;el.style.opacity=op;if(op<=0){el.style.display='none';clearInterval(f);}},30);}
 
 // ===== BATTLE =====
-// 現在戦闘中かどうか
-let _battling = false;
-
-async function executeBattle() {
-  if (_battling || !p2Warrior || currentFighterIdx < 0) return;
-  _battling = true;
-  document.getElementById('btn-battle-start').disabled = true;
-  document.getElementById('btn-flee').disabled = false;
-
-  const log = document.getElementById('battle-log');
-  log.textContent = '';
-
-  const push = (text, color) => {
-    const span = document.createElement('span');
-    span.textContent = text + '\n';
-    if (color) span.style.color = color;
-    log.appendChild(span);
-    log.scrollTop = log.scrollHeight;
-  };
-
-  // パーティ全員で1体のボスを倒すループ
-  let p2 = {...p2Warrior}; // p2HPは引き継ぎ
-
-  while (currentFighterIdx < party.length && p2.hp > 0) {
-    const curW = party[currentFighterIdx];
-    const p1 = {...curW};
-    const p1Max = p1.hp;
-
-    if (currentFighterIdx > selP1) {
-      push(`\n次の戦士 ${p1.name} が出撃！`, 'var(--purple)');
-      await sleep(500);
-    }
-    updateCurrentFighterBar();
-    setFighter('p1', p1, p1.hp, p1Max);
-    push(`${p1.name} VS ${p2.name}！`);
-    await sleep(600);
-
-    let round = 1;
-    let fled = false;
-    while (p1.hp > 0 && p2.hp > 0 && round <= 30 && !fled) {
-      push(`\n-- ROUND ${round} --`);
-      await sleep(350);
-
-      // 敵が逃げる（5%の確率、ボスは逃げない）
-      if (!p2.isBoss && rand(100) < 5) {
-        push(`${p2.name} は逃げ出した！`, '#aaaaff');
-        p2Warrior.at = Math.max(1, p2Warrior.at - 1);
-        // AT+1ボーナス
-        party[currentFighterIdx].at = (party[currentFighterIdx].at || 1) + 1;
-        push(`${p1.name} のATが1上がった！(AT:${party[currentFighterIdx].at})`, 'var(--green)');
-        await sleep(800);
-        saveAll();
-        _battling = false;
-        battleCnt++; restCnt=0; restRequired=COOLDOWN_WIN; saveAll();
-        document.getElementById('btn-flee').disabled = true;
-        document.getElementById('btn-battle-start').disabled = true;
-        renderParty();
-        // 勝利扱い
-        onVictory(push);
-        return;
+async function executeBattle(){
+  if(_battling||!p2Warrior||currentFighterIdx<0)return;
+  _battling=true;
+  document.getElementById('btn-battle-start').disabled=true;
+  document.getElementById('btn-flee').disabled=false;
+  const log=document.getElementById('battle-log');log.textContent='';
+  const push=(text,color)=>{const s=document.createElement('span');s.textContent=text+'\n';if(color)s.style.color=color;log.appendChild(s);log.scrollTop=log.scrollHeight;};
+  let p2={...p2Warrior};
+  while(currentFighterIdx<party.length&&p2.hp>0){
+    const curW=party[currentFighterIdx];const p1={...curW};const p1Max=p1.hp;
+    if(currentFighterIdx>selP1){push(`\n次の戦士 ${p1.name} が出撃！`,'var(--purple)');await sleep(500);}
+    updateFighterBar();setFighter('p1',p1,p1.hp,p1Max);
+    push(`${p1.name} VS ${p2.name}！`);await sleep(600);
+    let round=1;
+    while(p1.hp>0&&p2.hp>0&&round<=30&&_battling){
+      push(`\n-- ROUND ${round} --`);await sleep(350);
+      if(!p2.isBoss&&rand(100)<5){
+        push(`${p2.name} は逃げ出した！`,'#aaaaff');
+        party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)+1);
+        push(`${p1.name} のATが上がった！(AT:${party[currentFighterIdx].at})`,'var(--green)');
+        await sleep(800);_battling=false;battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();
+        document.getElementById('btn-flee').disabled=true;renderParty();onVictory(push);return;
       }
-
-      // P1攻撃
-      const d1 = Math.max(1, p1.at - Math.floor(p2.df * 0.5) + rand(8));
-      p2.hp = Math.max(0, p2.hp - d1);
-      push(`${p1.name}の攻撃！`, 'var(--red)');
-      push(`${p2.name}に${d1}ダメージ！(HP:${p2.hp})`, '#ff8800');
-      setFighter('p2', p2, p2.hp, p2MaxHp);
-      if (d1 >= FLASH_BIG) flash('rgba(255,100,0,0.6)');
-      await sleep(650);
-      if (p2.hp <= 0) break;
-
-      // P2攻撃
-      const d2 = Math.max(1, p2.at - Math.floor(p1.df * 0.5) + rand(8));
-      p1.hp = Math.max(0, p1.hp - d2);
-      push(`${p2.name}の反撃！`, 'var(--blue)');
-      push(`${p1.name}に${d2}ダメージ！(HP:${p1.hp})`, '#ff8800');
-      setFighter('p1', p1, p1.hp, p1Max);
-      if (d2 >= FLASH_BIG) flash('rgba(0,100,255,0.5)');
-      await sleep(650);
-      round++;
+      const d1=Math.max(1,p1.at-Math.floor(p2.df*.5)+rand(8));
+      p2.hp=Math.max(0,p2.hp-d1);
+      push(`${p1.name}の攻撃！`,'var(--red)');push(`${p2.name}に${d1}ダメージ！(HP:${p2.hp})`,'#ff8800');
+      setFighter('p2',p2,p2.hp,p2MaxHp);if(d1>=FLASH_BIG)flash('rgba(255,100,0,0.5)');
+      await sleep(650);if(p2.hp<=0)break;
+      const d2=Math.max(1,p2.at-Math.floor(p1.df*.5)+rand(8));
+      p1.hp=Math.max(0,p1.hp-d2);
+      push(`${p2.name}の反撃！`,'var(--blue)');push(`${p1.name}に${d2}ダメージ！(HP:${p1.hp})`,'#ff8800');
+      setFighter('p1',p1,p1.hp,p1Max);if(d2>=FLASH_BIG)flash('rgba(0,100,255,0.4)');
+      await sleep(650);round++;
     }
-
-    if (p2.hp <= 0) {
-      // 勝利
-      push(`${p2.name} を倒した！`, 'var(--gold)');
-      await sleep(400);
-      _battling = false;
-      battleCnt++; restCnt=0; restRequired=COOLDOWN_WIN; saveAll();
-      document.getElementById('btn-flee').disabled = true;
-      onVictory(push);
-      return;
-    }
-
-    if (p1.hp <= 0) {
-      push(`${p1.name} は倒れた！`, '#ff4444');
-      // この戦士に敗北クールダウン
-      await sleep(500);
-      currentFighterIdx++;
-      if (currentFighterIdx < party.length) {
-        push(`次の戦士を呼ぶ...`, 'var(--dim)');
-        await sleep(600);
-      }
-    }
+    if(p2.hp<=0){push(`${p2.name} を倒した！`,'var(--gold)');await sleep(400);_battling=false;battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();document.getElementById('btn-flee').disabled=true;onVictory(push);return;}
+    if(p1.hp<=0){push(`${p1.name} は倒れた！`,'#ff4444');await sleep(500);currentFighterIdx++;if(currentFighterIdx<party.length){push('次の戦士を呼ぶ...',null);await sleep(600);}}
   }
-
-  // 全員倒れた
-  await sleep(400);
-  push(`\n全員倒れた...`, 'var(--blue)');
-  _battling = false;
-  battleCnt++; restCnt=0; restRequired=COOLDOWN_LOSE; saveAll();
-  document.getElementById('btn-flee').disabled = true;
-  document.getElementById('def-name').textContent = p2.name;
-  showModal('modal-defeat');
+  await sleep(400);push('\n全員倒れた...','var(--blue)');_battling=false;
+  battleCnt++;restCnt=0;restRequired=COOLDOWN_LOSE;saveAll();
+  document.getElementById('btn-flee').disabled=true;
+  document.getElementById('def-name').textContent=p2.name;showModal('modal-defeat');
 }
 
-// 逃げる
-async function fleeBattle() {
-  if (!_battling) return;
-  _battling = false;
-  document.getElementById('btn-flee').disabled = true;
-  document.getElementById('btn-battle-start').disabled = true;
-
-  const log = document.getElementById('battle-log');
-  const span = document.createElement('span');
-  span.textContent = `\n${party[currentFighterIdx].name} は逃げ出した！\nATが1下がった...\n`;
-  span.style.color = '#aaaaaa';
-  log.appendChild(span);
-  log.scrollTop = log.scrollHeight;
-
-  // AT-1ペナルティ
-  party[currentFighterIdx].at = Math.max(1, (party[currentFighterIdx].at || 1) - 1);
-  saveAll(); renderParty();
-
-  battleCnt++; restCnt=0; restRequired=COOLDOWN_WIN; saveAll();
-  updateCooldownHint();
-  resetBattle();
+async function fleeBattle(){
+  if(!_battling)return;_battling=false;
+  document.getElementById('btn-flee').disabled=true;document.getElementById('btn-battle-start').disabled=true;
+  const log=document.getElementById('battle-log');
+  const s=document.createElement('span');s.textContent=`\n${party[currentFighterIdx].name} は逃げた！ATが1下がった...\n`;s.style.color='#aaa';log.appendChild(s);log.scrollTop=log.scrollHeight;
+  party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)-1);saveAll();renderParty();
+  battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();updateCooldownHint();resetBattle();
 }
 
-// 勝利処理
-function onVictory(push) {
-  const w = party[currentFighterIdx] || party[selP1];
-  if (!w) return;
-  const idx = currentFighterIdx < party.length ? currentFighterIdx : selP1;
-
-  party[idx].exp = (party[idx].exp || 0) + 1;
-  let levMsg = '';
-  while (party[idx].exp >= 100) {
-    party[idx].exp -= 100;
-    party[idx].lev = (party[idx].lev || 1) + 1;
-    party[idx].hp    += 10; party[idx].maxHp += 10;
-    party[idx].at    += 3;  party[idx].df    += 2;
-    levMsg += `\nLEVEL UP! LEV${party[idx].lev}`;
-    push(levMsg, 'var(--purple)');
-    if (party[idx].lev >= 10) {
-      saveAll(); renderParty();
-      setTimeout(showEnding, 800);
-      return;
-    }
-  }
-  saveAll(); renderParty(); updateCooldownHint();
-  showRecruitModal(p2Warrior);
+function onVictory(push){
+  const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
+  party[idx].exp=(party[idx].exp||0)+1;let levMsg='';
+  while(party[idx].exp>=100){party[idx].exp-=100;party[idx].lev=(party[idx].lev||1)+1;party[idx].hp+=10;party[idx].maxHp+=10;party[idx].at+=3;party[idx].df+=2;levMsg+=`\nLEVEL UP! LEV${party[idx].lev}`;push(levMsg,'var(--purple)');
+    if(party[idx].lev>=10){saveAll();renderParty();setTimeout(showEnding,800);return;}}
+  saveAll();renderParty();updateCooldownHint();showRecruitModal(p2Warrior);
 }
 
-function showRecruitModal(p2) {
-  const p1 = party[selP1];
-  document.getElementById('rec-p1-name').textContent = p1.name;
-  document.getElementById('rec-exp').textContent = `EXP: ${p1.exp||0}/100`;
-  document.getElementById('rec-icon').textContent = p2.icon || '❓';
-  const gender = p2.isFemale ? ' ♀' : ' ♂';
-  document.getElementById('rec-name').textContent = `${p2.name}${gender} [${p2.rarity}]`;
-  let statsText = `HP:${p2.hp} AT:${p2.at} DF:${p2.df}`;
-  if (p2.special) statsText += `\n${p2.special.label} (LEV+${p2.special.levBonus})`;
-  document.getElementById('rec-stats').textContent = statsText;
-  showModal('modal-recruit');
+function showRecruitModal(p2){
+  const p1=party[selP1];
+  document.getElementById('rec-p1-name').textContent=p1.name;
+  document.getElementById('rec-exp').textContent=`EXP: ${p1.exp||0}/100`;
+  document.getElementById('rec-icon').textContent=p2.icon||'❓';
+  document.getElementById('rec-name').textContent=`${p2.name}${p2.isFemale?' ♀':' ♂'} [${p2.rarity}]`;
+  let st=`HP:${p2.hp} AT:${p2.at} DF:${p2.df}`;if(p2.special)st+=`\n${p2.special.label}`;
+  document.getElementById('rec-stats').textContent=st;showModal('modal-recruit');
 }
 
-function recruitYes() {
+function recruitYes(){
   closeModal('modal-recruit');
-  const w = {...p2Warrior};
-  // スペシャルボーナス適用
-  if (w.special) {
-    w.lev = 1 + w.special.levBonus;
-    for (let i=0; i<w.special.levBonus; i++) {
-      w.hp += 10; w.maxHp += 10; w.at += 3; w.df += 2;
-    }
-  }
-  if (party.length < MAX_PARTY) {
-    party.push(w);
-    saveAll(); renderParty();
-    resetBattle();
-  } else {
-    // 仮保存してswap
-    p2Warrior = w;
-    showSwapModal();
-  }
+  const w={...p2Warrior};
+  if(w.special){w.lev=1+w.special.levBonus;for(let i=0;i<w.special.levBonus;i++){w.hp+=10;w.maxHp+=10;w.at+=3;w.df+=2;}}
+  if(party.length<MAX_PARTY){party.push(w);saveAll();renderParty();resetBattle();}
+  else{p2Warrior=w;showSwapModal();}
 }
-function recruitNo() {
-  closeModal('modal-recruit');
-  resetBattle();
-}
-function showSwapModal() {
-  const list = document.getElementById('swap-list');
-  list.innerHTML = '';
-  party.forEach((w,i) => {
-    const div = document.createElement('div');
-    div.className = 'swap-item';
-    div.innerHTML = `<div class="swap-icon">${w.icon||'⚔️'}</div><div><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span><div style="font-size:9px;color:#e0c080">${w.name}</div><div style="font-size:8px;color:var(--dim)">LEV${w.lev||1} HP:${w.hp} AT:${w.at} DF:${w.df}</div></div>`;
-    div.onclick = () => doSwap(i);
-    list.appendChild(div);
-  });
+function recruitNo(){closeModal('modal-recruit');resetBattle();}
+function showSwapModal(){
+  const list=document.getElementById('swap-list');list.innerHTML='';
+  party.forEach((w,i)=>{const d=document.createElement('div');d.className='swap-item';d.innerHTML=`<div class="swap-icon">${w.icon||'⚔️'}</div><div><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span><div style="font-size:9px;color:#e0c080">${w.name}</div><div style="font-size:8px;color:var(--dim)">LEV${w.lev||1} HP:${w.hp} AT:${w.at} DF:${w.df}</div></div>`;d.onclick=()=>doSwap(i);list.appendChild(d);});
   showModal('modal-swap');
 }
-function doSwap(i) {
-  party[i] = {...p2Warrior};
-  if (selP1 === i) selP1 = i;
-  saveAll(); renderParty();
-  closeModal('modal-swap');
-  resetBattle();
-}
-function cancelSwap() {
-  closeModal('modal-swap');
-  resetBattle();
-}
-function closeDefeat() {
-  closeModal('modal-defeat');
-  resetBattle();
-}
-function resetBattle() {
-  _battling = false;
-  stopQuagga();
-  p2Warrior = null;
-  p2MaxHp = 0;
-  currentFighterIdx = selP1;
+function doSwap(i){party[i]={...p2Warrior};saveAll();renderParty();closeModal('modal-swap');resetBattle();}
+function cancelSwap(){closeModal('modal-swap');resetBattle();}
+function closeDefeat(){closeModal('modal-defeat');resetBattle();}
+function resetBattle(){
+  _battling=false;stopAllScan();p2Warrior=null;p2MaxHp=0;currentFighterIdx=selP1;
   document.getElementById('p2-scan-area').classList.remove('hidden');
   document.getElementById('arena').classList.add('hidden');
-  document.getElementById('cam-p2').classList.add('hidden');
   document.getElementById('p2-msg').classList.add('hidden');
-  document.getElementById('btn-scan-p2').disabled = false;
-  document.getElementById('btn-flee').disabled = true;
-  document.getElementById('btn-battle-start').disabled = false;
+  document.getElementById('btn-scan-p2').disabled=false;
+  document.getElementById('btn-flee').disabled=true;
+  document.getElementById('btn-battle-start').disabled=false;
   updateCooldownHint();
 }
-
-function showEnding() {
-  document.getElementById('s-main').classList.remove('active');
-  const end = document.getElementById('s-ending');
-  end.style.display = 'flex';
-}
-function restartGame() {
-  if (!confirm('データをリセットして最初からやり直しますか？')) return;
-  party=[]; selP1=-1; battleCnt=0; restCnt=COOLDOWN_WIN; restRequired=COOLDOWN_WIN;
-  saveAll();
-  document.getElementById('s-ending').style.display = 'none';
-  document.getElementById('s-main').classList.add('active');
-  renderParty(); updateScanTab(); showTab('party');
-  showModal('modal-first');
-}
-
-// ===== QUAGGA =====
-function startQuagga(containerId, callback) {
-  stopQuagga();
-  const container = document.getElementById(containerId);
-  Quagga.init({
-    inputStream:{
-      type:'LiveStream',
-      target:container,
-      constraints:{
-        facingMode:'environment',
-        width:{ min:640, ideal:1920, max:1920 },
-        height:{ min:480, ideal:1080, max:1080 },
-      },
-      area:{ // 中央の細い帯だけスキャン（EANバーコード向け）
-        top:'30%',
-        right:'5%',
-        left:'5%',
-        bottom:'30%',
-      },
-    },
-    locator:{
-      patchSize:'large',  // CDの細いバーコード向けにlargeに
-      halfSample:false,
-    },
-    numOfWorkers: 1,
-    frequency: 5,
-    decoder:{
-      readers:[
-        { format:'ean_reader', config:{ supplements:[] } },
-        'ean_8_reader',
-        'upc_reader',
-      ],
-      multiple: false,
-    },
-    locate: true,
-  }, err => {
-    if (err) {
-      const msgId = scanTarget==='p1' ? 'scan-msg' : 'p2-msg';
-      showMsg(msgId, 'カメラが使えません。ブラウザの許可を確認してください。', 'warn');
-      document.getElementById(containerId).classList.add('hidden');
-      if (scanTarget==='p1') document.getElementById('btn-scan-p1').disabled = false;
-      else document.getElementById('btn-scan-p2').disabled = false;
-      return;
-    }
-    Quagga.start();
-    quaggaRunning = true;
-  });
-
-  // 信頼度チェック付き検出
-  Quagga.onDetected(result => {
-    const code = result.codeResult.code;
-    if (!code) return;
-    // 信頼度チェック（エラーが少ないものだけ通す）
-    const errors = result.codeResult.decodedCodes
-      .filter(x => x.error !== undefined)
-      .map(x => x.error);
-    if (errors.length > 0) {
-      const avgError = errors.reduce((a,b)=>a+b,0) / errors.length;
-      if (avgError > 0.15) return; // 信頼度が低い場合スキップ
-    }
-    const now = Date.now();
-    if (code === lastCode && now - lastTime < 2000) return;
-    lastCode = code; lastTime = now;
-    callback(code);
-  });
-}
-function stopQuagga() {
-  if (quaggaRunning) {
-    try { Quagga.offDetected(); Quagga.stop(); } catch(e) {}
-    quaggaRunning = false;
-  }
+function showEnding(){document.getElementById('s-main').style.display='none';document.getElementById('s-ending').style.display='flex';}
+function restartGame(){
+  if(!confirm('データをリセットしますか？'))return;
+  party=[];selP1=-1;battleCnt=0;restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;saveAll();
+  document.getElementById('s-ending').style.display='none';document.getElementById('s-main').style.display='block';
+  renderParty();updateScanTab();showTab('party');showModal('modal-first');
 }
 
 // ===== UTILS =====
-function showModal(id)  { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-function showMsg(id, text, type) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className = `msg msg-${type}`;
-  el.classList.remove('hidden');
-}
-function rand(n) { return Math.floor(Math.random() * n); }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function showModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function showMsg(id,text,type){const el=document.getElementById(id);el.textContent=text;el.className=`msg msg-${type}`;el.classList.remove('hidden');}
+function rand(n){return Math.floor(Math.random()*n);}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // ===== INIT =====
-loadAll();
-updateHomeInfo();
+loadAll();updateHomeInfo();
+document.getElementById('s-home').style.display='flex';
 </script>
 </body>
 </html>
