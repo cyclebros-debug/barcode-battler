@@ -474,7 +474,7 @@ function calcStats(code,isP2){
   if(isP2&&(parseInt(d.slice(-2))||0)<=BOSS_THRESHOLD){isBoss=true;const m=1.5+(seed%100)/66.7;hp=Math.min(500,Math.round(hp*m));at=Math.min(200,Math.round(at*m));df=Math.min(200,Math.round(df*m));}
   let name,icon,isFemale=false;
   if(isP2){isFemale=(parseInt(d.slice(-1))%5===0);if(isFemale){name=NAMES_F[parseInt(d.slice(-3))%NAMES_F.length];icon=ICONS_F[parseInt(d.slice(-4))%ICONS_F.length];}else{name=NAMES_M[parseInt(d.slice(-3))%NAMES_M.length];icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}if(isBoss)name='[BOSS]'+name;}
-  else{name=heroName||'ヒーロー';const wtIdx=parseInt(d.slice(-4))%WARRIOR_TYPES.length;icon=WARRIOR_TYPES[wtIdx].icon;}
+  else{name=heroName||'ヒーロー';const wtIdx=parseInt(d.slice(-4))%WARRIOR_TYPES.length;icon=WARRIOR_TYPES[wtIdx].icon+'️';}
   const special=calcSpecial(d);
   return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale,lev:1,exp:0,code:d,special,isBoss};
 }
@@ -834,8 +834,9 @@ async function fleeBattle(){
   if(_battling)return;
   const log=document.getElementById('battle-log');
   const s=document.createElement('span');s.textContent=`\n${party[currentFighterIdx].name} は逃げた！ATが1下がった...\n`;s.style.color='#aaa';log.appendChild(s);log.scrollTop=log.scrollHeight;
-  party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)-1);saveAll();renderParty();
-  battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();updateCooldownHint();
+  party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)-1);
+  setRestForWarrior(currentFighterIdx,COOLDOWN_WIN);
+  battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();renderParty();updateCooldownHint();
   await sleep(600);resetBattle();
 }
 
@@ -874,16 +875,18 @@ function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
+  // selP1を現在の戦士に確実に設定
+  selP1=idx;
   party[idx].exp=(party[idx].exp||0)+3;let levMsg='';
   while(party[idx].exp>=100){party[idx].exp-=100;party[idx].lev=(party[idx].lev||1)+1;party[idx].hp+=10;party[idx].maxHp+=10;party[idx].at+=3;party[idx].df+=2;levMsg+=`\nLEVEL UP! LEV${party[idx].lev}`;push(levMsg,'var(--purple)');
     if(party[idx].lev>=10){saveAll();renderParty();setTimeout(showEnding,800);return;}}
   saveAll();renderParty();updateCooldownHint();
-  renderParty(); // 休憩バッジ更新
   showRecruitModal(p2Warrior);
 }
 
 function showRecruitModal(p2){
   const p1=party[selP1];
+  if(!p1){resetBattle();return;} // ガード
   document.getElementById('rec-p1-name').textContent=p1.name;
   document.getElementById('rec-exp').textContent=`EXP: ${p1.exp||0}/100`;
   document.getElementById('rec-icon').textContent=p2.icon||'❓';
