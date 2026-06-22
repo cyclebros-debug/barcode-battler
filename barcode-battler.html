@@ -517,29 +517,26 @@ function showTab(id){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   document.getElementById('nav-'+id).classList.add('active');
-  if(id!=='battle'&&battleCnt>0){
-    // 全戦士の休憩カウントダウン
-    let changed=false;
-    Object.keys(restPerWarrior).forEach(k=>{
-      if(restPerWarrior[k]>0){restPerWarrior[k]--;changed=true;}
-      if(restPerWarrior[k]<=0) delete restPerWarrior[k];
-    });
-    // 選択中の戦士が休憩中になったら選択解除
-    if(selP1>=0 && getRestInfo(selP1)>0) selP1=-1;
-    if(!canBattleNow()){restCnt=Math.min(restRequired,restCnt+1);}
-    if(changed)saveAll();
-  }
   updateCooldownHint();
   renderParty();
 }
-function canBattleNow(){return restCnt>=restRequired;}
+function canBattleNow(){
+  // selP1が休憩中でないこと
+  if(selP1>=0 && getRestInfo(selP1)>0) return false;
+  return true;
+}
 function updateCooldownHint(){
   const can=canBattleNow();
   const btn=document.getElementById('btn-scan-p2');
   if(btn)btn.disabled=!can&&battleCnt>0;
   const msg=document.getElementById('cooldown-msg');
-  if(!can&&battleCnt>0){msg.textContent=`休息中... あと${restRequired-restCnt}回行動でバトル可能`;msg.classList.remove('hidden');}
-  else msg.classList.add('hidden');
+  if(!can&&battleCnt>0){
+    const left=selP1>=0?getRestInfo(selP1):0;
+    msg.textContent=`選択中の戦士は休憩中です（残り${left}回）`;
+    msg.classList.remove('hidden');
+  } else {
+    msg.classList.add('hidden');
+  }
 }
 function updateScanTab(){const f=party.length===0;document.getElementById('scan-locked').classList.toggle('hidden',f);document.getElementById('scan-open').style.display=f?'block':'none';}
 
@@ -558,7 +555,7 @@ function renderParty(){
   const list=document.getElementById('party-list');list.innerHTML='';
   for(let i=0;i<MAX_PARTY;i++){
     const w=party[i],div=document.createElement('div');
-    if(!w){div.className='party-slot empty';div.innerHTML=`<span>空きスロット ${i+1}/${MAX_PARTY}</span>`;}
+    if(!w){div.className='party-slot empty';div.innerHTML=`<span style="font-size:11px">空きスロット<br/><span style="font-size:9px;color:#333">${i+1}/${MAX_PARTY}</span></span>`;}
     else{
       const restLeft = getRestInfo(i);
       const isResting = restLeft > 0;
@@ -838,6 +835,8 @@ async function executeBattle(){
   } else {
     push(`${p1.name} は倒れた！`,'#ff4444');await sleep(600);
     p2Warrior.hp=p2.hp;
+    // バトル終了で全員カウント-1してから、この戦士に3回休憩セット
+    tickRestAll();
     setRestForWarrior(currentFighterIdx,COOLDOWN_LOSE);
     battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;
     showDefeatModal(p2.name,p2.hp);
@@ -850,6 +849,8 @@ async function fleeBattle(){
   const log=document.getElementById('battle-log');
   const s=document.createElement('span');s.textContent=`\n${party[currentFighterIdx].name} は逃げた！ATが1下がった...\n`;s.style.color='#aaa';log.appendChild(s);log.scrollTop=log.scrollHeight;
   party[currentFighterIdx].at=Math.max(1,(party[currentFighterIdx].at||1)-1);
+  // バトル終了で全員カウント-1してから、この戦士に1回休憩セット
+  tickRestAll();
   setRestForWarrior(currentFighterIdx,COOLDOWN_WIN);
   battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();renderParty();updateCooldownHint();
   await sleep(600);resetBattle();
@@ -888,10 +889,21 @@ function selectNextFighter(idx){
 function defeatGiveUp(){closeModal('modal-defeat');resetBattle();}
 function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 
+// バトル1回終了後に全員の休憩カウントを-1する
+function tickRestAll(){
+  Object.keys(restPerWarrior).forEach(k=>{
+    if(restPerWarrior[k]>0) restPerWarrior[k]--;
+    if(restPerWarrior[k]<=0) delete restPerWarrior[k];
+  });
+  saveAll();
+}
+
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
   selP1=idx;
-  // 勝利後も必ず1回休憩
+  // バトル終了で全員のカウントを先に-1
+  tickRestAll();
+  // 勝利したこの戦士は新たに1回休憩をセット
   setRestForWarrior(idx, COOLDOWN_WIN);
   party[idx].exp=(party[idx].exp||0)+3;
   let levMsg='';
