@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>BARCODE BATTLER</title>
+<title>METAL BARCODE BATTLER</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
 :root{--bg:#0a0a0f;--panel:#12121a;--border:#1e1e2e;--red:#ff2200;--gold:#ffd700;--green:#00ff88;--blue:#4488ff;--purple:#aa44ff;--text:#d0c8b8;--dim:#505060;}
@@ -15,9 +15,11 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .home-glow{position:absolute;top:0;left:0;right:0;height:300px;background:radial-gradient(ellipse at 50% -20%,rgba(255,34,0,.4) 0%,transparent 70%);z-index:0;pointer-events:none;}
 .home-content{position:relative;z-index:1;text-align:center;padding:40px 20px 0;width:100%;}
 .home-sub{font-size:10px;letter-spacing:6px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
-.home-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(22px,8vw,36px);line-height:1;color:var(--red);text-shadow:0 0 30px rgba(255,34,0,.7);margin-bottom:4px;letter-spacing:2px;}
+.home-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(16px,6vw,28px);line-height:1;color:var(--red);text-shadow:0 0 30px rgba(255,34,0,.7);margin-bottom:4px;letter-spacing:2px;}
 .home-title span{display:block;font-size:clamp(16px,6vw,26px);color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.6);}
 .home-skull{font-size:70px;margin:16px 0;display:block;filter:drop-shadow(0 0 20px rgba(255,34,0,.6));}
+.home-guitar{margin:16px auto;display:flex;justify-content:center;filter:drop-shadow(0 0 18px rgba(255,34,0,.8));animation:guitarFloat 3s ease-in-out infinite;}
+@keyframes guitarFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
 .home-desc{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:20px;}
 .home-party-info{background:rgba(255,34,0,.08);border:1px solid rgba(255,34,0,.2);border-radius:8px;padding:10px 16px;margin:0 20px 20px;font-size:11px;color:var(--dim);}
 .home-party-info span{color:var(--gold);}
@@ -159,9 +161,72 @@ input:focus{outline:none;border-color:var(--red);}
 <div id="s-home">
   <div class="home-glow"></div>
   <div class="home-content">
-    <div class="home-sub">☠ SCAN &amp; FIGHT ☠</div>
-    <div class="home-title">BARCODE<span>BATTLER</span></div>
-    <span class="home-skull">⚔️</span>
+    <div class="home-sub">☠ SCAN &amp; SHRED ☠</div>
+    <div class="home-title">METAL BARCODE<span>BATTLER</span></div>
+    <div class="home-guitar">
+  <svg viewBox="0 0 200 220" width="160" height="176" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#cc2200;stop-opacity:1"/>
+        <stop offset="50%" style="stop-color:#ff4400;stop-opacity:1"/>
+        <stop offset="100%" style="stop-color:#880000;stop-opacity:1"/>
+      </linearGradient>
+      <linearGradient id="neckGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#4a2800;stop-opacity:1"/>
+        <stop offset="100%" style="stop-color:#7a4800;stop-opacity:1"/>
+      </linearGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- ネック -->
+    <rect x="94" y="10" width="12" height="110" rx="3" fill="url(#neckGrad)" stroke="#2a1400" stroke-width="1"/>
+    <!-- フレット -->
+    <line x1="94" y1="30" x2="106" y2="30" stroke="#d4a800" stroke-width="1.5"/>
+    <line x1="94" y1="45" x2="106" y2="45" stroke="#d4a800" stroke-width="1.5"/>
+    <line x1="94" y1="58" x2="106" y2="58" stroke="#d4a800" stroke-width="1.5"/>
+    <line x1="94" y1="70" x2="106" y2="70" stroke="#d4a800" stroke-width="1.5"/>
+    <line x1="94" y1="81" x2="106" y2="81" stroke="#d4a800" stroke-width="1.5"/>
+    <line x1="94" y1="91" x2="106" y2="91" stroke="#d4a800" stroke-width="1.5"/>
+    <line x1="94" y1="100" x2="106" y2="100" stroke="#d4a800" stroke-width="1.5"/>
+    <!-- ヘッド -->
+    <rect x="88" y="2" width="24" height="14" rx="3" fill="#3a1800" stroke="#2a1000" stroke-width="1"/>
+    <circle cx="91" cy="6" r="2" fill="#c8a000"/><circle cx="91" cy="12" r="2" fill="#c8a000"/>
+    <circle cx="100" cy="6" r="2" fill="#c8a000"/><circle cx="100" cy="12" r="2" fill="#c8a000"/>
+    <circle cx="109" cy="6" r="2" fill="#c8a000"/><circle cx="109" cy="12" r="2" fill="#c8a000"/>
+    <!-- フライングV ボディ左翼 -->
+    <polygon points="100,110 20,200 55,200 100,145" fill="url(#bodyGrad)" stroke="#660000" stroke-width="1.5" filter="url(#glow)"/>
+    <!-- フライングV ボディ右翼 -->
+    <polygon points="100,110 180,200 145,200 100,145" fill="url(#bodyGrad)" stroke="#660000" stroke-width="1.5" filter="url(#glow)"/>
+    <!-- ボディ中央 -->
+    <polygon points="94,110 106,110 108,145 92,145" fill="url(#bodyGrad)" stroke="#660000" stroke-width="1"/>
+    <!-- テールピース -->
+    <rect x="92" y="145" width="16" height="8" rx="2" fill="#222" stroke="#555" stroke-width="1"/>
+    <!-- ピックアップ -->
+    <rect x="88" y="125" width="24" height="7" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+    <rect x="88" y="136" width="24" height="7" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+    <!-- ピックアップポールピース -->
+    <circle cx="93" cy="128" r="1.2" fill="#888"/>
+    <circle cx="98" cy="128" r="1.2" fill="#888"/>
+    <circle cx="103" cy="128" r="1.2" fill="#888"/>
+    <circle cx="93" cy="139" r="1.2" fill="#888"/>
+    <circle cx="98" cy="139" r="1.2" fill="#888"/>
+    <circle cx="103" cy="139" r="1.2" fill="#888"/>
+    <!-- コントロールノブ -->
+    <circle cx="120" cy="170" r="4" fill="#222" stroke="#555" stroke-width="1"/>
+    <circle cx="132" cy="178" r="4" fill="#222" stroke="#555" stroke-width="1"/>
+    <!-- 弦 -->
+    <line x1="96" y1="8" x2="96" y2="148" stroke="#aaa" stroke-width="0.6" opacity="0.7"/>
+    <line x1="98" y1="8" x2="98" y2="148" stroke="#aaa" stroke-width="0.6" opacity="0.7"/>
+    <line x1="100" y1="8" x2="100" y2="148" stroke="#aaa" stroke-width="0.7" opacity="0.7"/>
+    <line x1="102" y1="8" x2="102" y2="148" stroke="#bbb" stroke-width="0.8" opacity="0.7"/>
+    <line x1="104" y1="8" x2="104" y2="148" stroke="#bbb" stroke-width="0.9" opacity="0.7"/>
+    <!-- ボディの光沢 -->
+    <polygon points="100,115 130,185 125,185 97,120" fill="rgba(255,100,0,0.15)"/>
+    <polygon points="100,115 70,185 75,185 103,120" fill="rgba(255,100,0,0.15)"/>
+  </svg>
+</div>
     <div class="home-desc">バーコードをスキャンして戦士を召喚せよ</div>
     <div class="home-party-info" id="home-info">セーブデータなし</div>
     <button class="home-btn" onclick="enterMain()">▶ START GAME</button>
@@ -390,67 +455,67 @@ const WARRIOR_TYPES_F = [
   {icon:'🌺', label:'フローレス'},
 ];
 const ICONS_F = WARRIOR_TYPES_F.map(t=>t.icon+'\u{FE0F}');
-// 80〜90年代 週刊少年ジャンプ・マガジン登場キャラ（男性）
+// ===== 敵キャラ名：ヘヴィメタルミュージシャン =====
 const NAMES_M=[
-  // ドラゴンボール（ジャンプ84〜95）
-  '悟空','ベジータ','ピッコロ','フリーザ','セル','トランクス','悟飯','クリリン','天津飯',
-  'ヤムチャ','チャオズ','ラディッツ','ナッパ','ギニュー','リクーム','バータ','グルド','ジース',
-  'ザーボン','ドドリア','ブロリー','ターレス','クウラ','ガーリック','パラガス','セル','魔人ブウ',
-  // 幽遊白書（ジャンプ90〜94）
-  '幽助','桑原','蔵馬','飛影','戸愚呂兄','戸愚呂弟','仙水','向井','武威','鴉','鈴木',
-  'コエンマ','雷禅','黄泉','左京','ガモウ','イェイリン','シャチ','陣','海藤',
-  // 聖闘士星矢（ジャンプ86〜90）
-  '星矢','紫龍','氷河','瞬','一輝','シャカ','ミロ','アイオリア','アルデバラン',
-  'カミュ','デスマスク','アフロディーテ','ムウ','サガ','カノン','シュラ','クリシュナ',
-  // 北斗の拳（ジャンプ83〜88）
-  'ケンシロウ','ラオウ','トキ','ジャギ','シン','サウザー','フドウ','シュウ','カイオウ',
-  'ファルコ','バット','ハン','ジュウザ','リュウガ','コウリュウ',
-  // ジョジョの奇妙な冒険（ジャンプ87〜）
-  'ジョナサン','ジョセフ','承太郎','仗助','ディオ','カーズ','ワムウ','エシディシ',
-  '花京院','アバッキオ','ポルナレフ','吉良吉影','ブチャラティ','ミスタ','ナランチャ',
-  // スラムダンク（ジャンプ90〜96）
-  '桜木花道','流川楓','赤木剛憲','三井寿','宮城リョータ','仙道彰','牧紳一','神宗一郎',
-  '魚住純','花形透','南烈','武藤正',
-  // キャプテン翼（ジャンプ81〜88）
-  '大空翼','若林源三','日向小次郎','岬太郎','松山光','三杉淳','早田誠','立花和夫',
-  'ナトゥレーザ','デューマ','カルロス',
-  // ろくでなしBLUES（ジャンプ88〜97）
-  '前田太尊','立花兄弟','二条院','本田','勝田','布陣',
-  // 魁！男塾（ジャンプ85〜91）
-  '剣桃太郎','江田島平八','富樫','虎丸','伊達',
-  // 男塾・その他ジャンプ
-  'アラレ','則巻千兵衛','ターちゃん','刃牙','範馬勇次郎','愚地独歩',
-  // マガジン80〜90年代
-  '両津勘吉','中川','麻里愛','あかね','乱馬','玄馬','響良牙','シャンプー',
-  'ムース','コロン','八宝斎','ハーレム','ゲン','バクーマ','リョウ',
-  'ゴルゴ13','シティーハンター冴羽獠','海坊主','槇村秀幸',
-  // ガラスの仮面（マガジン76〜）
-  'マイケル','速水真澄',
-  // マガジン格闘系
-  '板垣恵介','グラップラー刃牙','ボーパン','柳','愚地克己',
+  // LAメタル/グラムメタル
+  'ヴィンス・ニール','ニッキー・シックス','トミー・リー','ミック・マーズ',
+  'スティーヴン・パーシー','ウォーレン・デ・マルティーニ','ブレット・マイヤーズ','C.C.デヴィル',
+  'トム・キーファー','ケヴィン・ダブロウ','カルロス・カヴァーゾ','ドン・ドッケン','ジョージ・リンチ',
+  'ブラッキー・ローレス','クリス・ホルムズ','マーク・スローター','キップ・ウィンガー','レブ・ビーチ',
+  'フィリップ・ルイス','トレイシー・ガンズ',
+  // 正統派HR/HM & NWOBHM
+  'ブルース・ディッキンソン','スティーヴ・ハリス','エイドリアン・スミス','デイヴ・マーレイ',
+  'ロブ・ハルフォード','グレン・ティプトン','K.K.ダウニング',
+  'オジー・オズボーン','ランディ・ローズ','ジェイク・E・リー','ザック・ワイルド',
+  'ロニー・ジェイムス・ディオ','ヴィヴィアン・キャンベル',
+  'レミー・キルミスター','ビフ・バイフォード',
+  'ウド・ダークシュナイダー','ウルフ・ホフマン',
+  'デヴィッド・カヴァーデール','ジョン・サイクス',
+  'ジョー・エリオット','フィル・コリン','スティーヴ・クラーク',
+  'アンガス・ヤング','マルコム・ヤング','ブライアン・ジョンソン',
+  'クラウス・マイネ','ルドルフ・シェンカー','マティアス・ヤプス',
+  'キング・ダイヤモンド','ハンク・シャーマン',
+  // スラッシュメタル
+  'ジェイムズ・ヘットフィールド','カーク・ハメット','ラーズ・ウルリッヒ','クリフ・バートン',
+  'トム・アラヤ','ケリー・キング','ジェフ・ハンネマン','デイヴ・ロンバード',
+  'デイヴ・ムステイン','マーティ・フリードマン','デイヴィッド・エレフソン',
+  'スコット・イアン','ジョーイ・ベラドナ','チャーリー・ベナンテ',
+  'チャック・ビリー','エリック・ピーターソン','アレックス・スコルニック',
+  'マックス・カヴァレラ','ジーン・ホグラン','ゲイリー・ホルト',
+  // シアトル系/グランジ
+  'クリス・コーネル','カート・コバーン','レイン・ステイリー','ジェリー・カントレル',
+  'エディ・ヴェダー','マイク・マクレディ','デイヴ・グロール',
+  'スコット・ウェイランド','ビリー・コーガン',
+  // パワーメタル
+  'カイ・ハンセン','マイケル・キスケ','アンディ・デリス',
+  'ハンズィ・キアシュ','ティモ・トルキ','トビアス・サメット',
+  'サム・トットマン','ハーマン・リ','クリス・インペリテリ',
+  // スタジアムHR/アリーナロック
+  'ジョン・ボン・ジョヴィ','リッチー・サンボラ',
+  'アクセル・ローズ','スラッシュ','ダフ・マッケイガン','イジー・ストラドリン',
+  'セバスチャン・バック','スティーヴ・ヴァイ',
+  'ビリー・シーン','エリック・マーティン','ポール・ギルバート',
+  'ヌーノ・ベッテンコート','ゲイリー・シェローン',
+  'エディ・ヴァン・ヘイレン','サミー・ヘイガー',
+  // ネオクラシカル/プログレ/モダン
+  'イングヴェイ・マルムスティーン',
+  'ジェイムズ・ラブリエ','ジョン・ペトルーシ','マイク・ポートノイ',
+  'ジェフ・テイト','マイケル・ロメオ','ミカエル・オーカーフェルト',
+  'フィリップ・アンセルモ','ダイムバッグ・ダレル','ヴィニー・ポール',
+  'コリィ・テイラー','ミック・トムソン','ジム・ルート','ジョーイ・ジョーディソン',
+  'ジョナサン・デイヴィス','チェスター・ベニントン',
+  'チノ・モレノ','ザック・デ・ラ・ロッチャ','トム・モレロ','メイナード・ジェームズ・キーナン',
 ];
-// 80〜90年代女性キャラ
+// 女性キャラは引き続き従来通り
 const NAMES_F=[
-  // ドラゴンボール
-  'ブルマ','チチ','ビーデル','18号','ランチ','マーロン',
-  // 幽遊白書
+  'ブルマ','チチ','ビーデル','18号','ランチ',
   'ぼたん','雪菜','螢子','美樹',
-  // 聖闘士星矢
-  'アテナ','シャイナ','エリス','ヘラ','アフロディーテ',
-  // うる星やつら（マガジン）
-  'ラム','竜之介','テン','ランちゃん','シノブ',
-  // らんま1/2（マガジン）
-  '天道あかね','らんま女','シャンプー','九能小太刀','早乙女のどか',
-  // シティーハンター（ジャンプ）
+  'アテナ','シャイナ','エリス',
+  'ラム','天道あかね','シャンプー','九能小太刀',
   '槇村香','美樹','レイラ',
-  // NG騎士ラムネ＆40（マガジン）
-  'バーリア','ミルク',
-  // 北斗の拳
   'ユリア','マミヤ','リン',
-  // スラムダンク
   '赤木晴子','彩子',
-  // その他
-  'なかよし','サクラ','ヒナ','レイ','アオイ','カナ','ミツキ','ユキ','ハル','ナナ',
+  'サクラ','ヒナ','レイ','アオイ','カナ','ミツキ',
 ];
 
 // ===== STATE =====
