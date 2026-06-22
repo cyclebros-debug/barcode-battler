@@ -129,6 +129,8 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
   0%,100%{box-shadow:0 0 8px currentColor,0 0 20px currentColor;}
   50%{box-shadow:0 0 16px currentColor,0 0 40px currentColor;}
 }
+.part-btn{font-family:inherit;font-size:12px;padding:8px;border:1px solid var(--border);background:#0d0d10;color:var(--dim);border-radius:6px;cursor:pointer;transition:all .2s;}
+.part-btn.selected{background:linear-gradient(135deg,#660000,#cc0000);color:#fff;border-color:var(--red);box-shadow:0 0 10px rgba(255,34,0,.4);}
 .btn-recruit-yes{
   background:linear-gradient(135deg,#554400,#cc8800);color:#fff;
   border:2px solid var(--gold);
@@ -229,7 +231,7 @@ input:focus{outline:none;border-color:var(--red);}
   </svg>
 </div>
     <div class="home-desc">バーコードをスキャンしてメンバーをスカウトせよ</div>
-    <div class="home-mission">売れないローカルバンドから<br/>伝説のバンドへ！<br/>LEV10でロックの殿堂入り！</div>
+    <div class="home-mission">伝説のメタルゴッドを目指す<br/>少年の戦いが始まる！<br/>LEV10で頂点へ！</div>
     <div class="home-party-info" id="home-info">セーブデータなし</div>
     <button class="home-btn" onclick="enterMain()">▶ START GAME</button>
   </div>
@@ -245,7 +247,8 @@ input:focus{outline:none;border-color:var(--red);}
 
   <!-- PARTY -->
   <div class="tab active" id="tab-party">
-    <div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;">Band Members</div>
+    <div id="band-name-display" style="font-family:'Orbitron',sans-serif;font-size:14px;color:var(--red);text-shadow:0 0 10px rgba(255,34,0,.5);text-align:center;margin-bottom:4px;letter-spacing:2px;"></div>
+<div style="font-size:9px;color:var(--dim);letter-spacing:3px;text-align:center;margin-bottom:10px;text-transform:uppercase;">Band Members</div>
     <div id="party-list"></div>
     <div id="band-bonus-display" style="margin-bottom:10px;"></div>
 <button class="btn btn-battle" id="btn-to-battle" onclick="showTab('battle')" disabled>🔥 ライブバトルへ</button>
@@ -253,7 +256,7 @@ input:focus{outline:none;border-color:var(--red);}
 
   <!-- SCAN -->
   <div class="tab" id="tab-scan">
-    <div id="scan-locked" class="msg msg-warn hidden">最初のメンバーはバトル勝利でスカウトします。まずバトルへ！</div>
+    <div id="scan-locked" class="msg msg-warn hidden">バトルに勝利してメンバーをスカウトせよ！まずバトルへ！</div>
     <div id="scan-open">
       <div class="card">
         <div class="card-title">バーコードをスキャン</div>
@@ -352,8 +355,8 @@ input:focus{outline:none;border-color:var(--red);}
 <!-- ENDING -->
 <div id="s-ending" style="display:none;min-height:100vh;background:#000;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px;">
   <div style="font-size:80px;margin-bottom:16px;">👑</div>
-  <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.8);margin-bottom:12px;">LEGENDARY BAND!</div>
-  <div style="font-size:12px;color:var(--dim);line-height:2;margin-bottom:24px;">LEV 10 到達！<br/>伝説のバンドが誕生した！！<br/>ロックの殿堂入りおめでとう！</div>
+  <div style="font-family:'Orbitron',sans-serif;font-size:18px;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.8);margin-bottom:6px;">METAL GOD!</div><div id="ending-band-name" style="font-size:14px;color:var(--red);margin-bottom:8px;"></div>
+  <div style="font-size:12px;color:var(--dim);line-height:2;margin-bottom:24px;">LEV 10 到達！<br/>伝説のバンドが誕生した！！<br/>メタルゴッドに認められた！<br/>ロックの殿堂入りおめでとう！</div>
   <button class="btn btn-battle" onclick="restartGame()" style="max-width:280px;">もう一度挑む</button>
 </div>
 
@@ -405,16 +408,26 @@ input:focus{outline:none;border-color:var(--red);}
 <div class="overlay" id="modal-first">
   <div class="modal">
     <div class="modal-title" style="font-size:16px;">🎸 バンド結成</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.7;">売れないローカルバンドの<br/>リーダーとして出発！<br/>伝説のミュージシャンを<br/>スカウトして伝説のバンドを<br/>結成せよ！</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.8;">伝説のメタルゴッドを目指す<br/>少年よ！<br/>バーコードをスキャンして<br/>最強のメンバーをスカウトし<br/>伝説のバンドを結成せよ！</div>
     <button class="btn btn-primary" onclick="closeFirst()">スキャンへ</button>
   </div>
 </div>
 <div class="overlay" id="modal-heroname">
   <div class="modal">
-    <div class="modal-title" style="font-size:16px;">🎸 バンドリーダーの名前</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">あなたのバンドリーダーの<br/>名前を入力してください</div>
-    <input type="text" id="input-heroname" placeholder="名前を入力..." maxlength="10" style="text-align:center;"/>
-    <button class="btn btn-primary" onclick="confirmHeroName()">決定</button>
+    <div class="modal-title" style="font-size:15px;">🎸 バンド結成</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.8;">伝説のメタルゴッドを目指す<br/>少年よ、名乗れ！</div>
+    <div style="font-size:10px;color:var(--dim);text-align:left;margin-bottom:4px;letter-spacing:1px;">YOUR NAME</div>
+    <input type="text" id="input-heroname" placeholder="あなたの名前..." maxlength="10" style="text-align:center;margin-bottom:10px;"/>
+    <div style="font-size:10px;color:var(--dim);text-align:left;margin-bottom:4px;letter-spacing:1px;">BAND NAME</div>
+    <input type="text" id="input-bandname" placeholder="バンド名..." maxlength="16" style="text-align:center;margin-bottom:10px;"/>
+    <div style="font-size:10px;color:var(--dim);text-align:left;margin-bottom:6px;letter-spacing:1px;">YOUR PART</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;" id="part-selector">
+      <button class="part-btn" onclick="selectPart('Vo')" id="part-Vo">🎤 Vo</button>
+      <button class="part-btn" onclick="selectPart('Gt')" id="part-Gt">🎸 Gt</button>
+      <button class="part-btn" onclick="selectPart('Ba')" id="part-Ba">🎵 Ba</button>
+      <button class="part-btn" onclick="selectPart('Dr')" id="part-Dr">🥁 Dr</button>
+    </div>
+    <button class="btn btn-primary" onclick="confirmHeroName()">決定 → 伝説へ！</button>
   </div>
 </div>
 
@@ -533,7 +546,7 @@ const NAMES_F=[
 ];
 
 // ===== STATE =====
-let party=[],selP1=-1,restCnt=COOLDOWN_WIN,restRequired=COOLDOWN_WIN,battleCnt=0;
+let party=[],selP1=-1,restCnt=COOLDOWN_WIN,restRequired=COOLDOWN_WIN,battleCnt=0,bandName='';
 let p2Warrior=null,p2MaxHp=0,pendingW=null,heroName='';
 let currentFighterIdx=0,_battling=false,lastDefeatedIdx=-1;
 let restPerWarrior={}; // {index: 残り休憩回数}
@@ -541,9 +554,10 @@ let scanTarget=null,videoStream=null,scanInterval=null;
 const RC_CLS={N:'r-N',R:'r-R',SR:'r-SR',SSR:'r-SSR'};
 
 // ===== STORAGE =====
-function saveAll(){try{localStorage.setItem('bb_p',JSON.stringify(party));localStorage.setItem('bb_m',JSON.stringify({selP1,restCnt,restRequired,battleCnt,heroName,lastDefeatedIdx,restPerWarrior}));}catch(e){}}
+function saveAll(){try{localStorage.setItem('bb_p',JSON.stringify(party));localStorage.setItem('bb_m',JSON.stringify({selP1,restCnt,restRequired,battleCnt,heroName,bandName,lastDefeatedIdx,restPerWarrior}));}catch(e){}}
 function loadAll(){try{const p=localStorage.getItem('bb_p'),m=localStorage.getItem('bb_m');if(p)party=JSON.parse(p);if(m){const o=JSON.parse(m);selP1=o.selP1??-1;restCnt=o.restCnt??COOLDOWN_WIN;restRequired=o.restRequired??COOLDOWN_WIN;battleCnt=o.battleCnt??0;heroName=o.heroName||'';lastDefeatedIdx=o.lastDefeatedIdx??-1;
-    restPerWarrior=o.restPerWarrior||{};}else{restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}if(selP1>=party.length)selP1=-1;}catch(e){party=[];restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}}
+    restPerWarrior=o.restPerWarrior||{};
+    bandName=o.bandName||'';}else{restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}if(selP1>=party.length)selP1=-1;}catch(e){party=[];restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;}}
 
 // ===== CALC =====
 function calcRarity(d){const n=parseInt(d.slice(-2))||0;if(n>=RARE_THR.SSR)return 'SSR';if(n>=RARE_THR.SR)return 'SR';if(n>=RARE_THR.R)return 'R';return 'N';}
@@ -580,10 +594,34 @@ function enterMain(){
   renderParty();updateScanTab();updateCooldownHint();
   if(party.length===0){if(!heroName)showModal('modal-heroname');else showModal('modal-first');}
 }
+let selectedPart='Gt'; // デフォルトはGt
+
+function selectPart(part){
+  selectedPart=part;
+  document.querySelectorAll('.part-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('part-'+part).classList.add('selected');
+}
+
 function confirmHeroName(){
-  const v=document.getElementById('input-heroname').value.trim();
-  if(!v){alert('名前を入力してください');return;}
-  heroName=v;saveAll();closeModal('modal-heroname');showModal('modal-first');
+  const name=document.getElementById('input-heroname').value.trim();
+  const band=document.getElementById('input-bandname').value.trim();
+  if(!name){alert('名前を入力してください');return;}
+  if(!band){alert('バンド名を入力してください');return;}
+  heroName=name;
+  bandName=band;
+  // リーダー自身をパーティ0番に追加
+  const leaderStats={hp:120,maxHp:120,at:30,df:20,rarity:'R',
+    name:heroName,icon:'🎸',isFemale:false,
+    position:selectedPart,genre:'LAメタル',
+    lev:1,exp:0,code:'0000000',special:null,isBoss:false};
+  const pb=POS_BONUS[selectedPart];
+  leaderStats.hp+=pb.hp;leaderStats.maxHp+=pb.hp;
+  leaderStats.at+=pb.at;leaderStats.df+=pb.df;
+  party=[leaderStats];
+  selP1=0;
+  saveAll();
+  closeModal('modal-heroname');
+  showModal('modal-first');
 }
 function closeFirst(){closeModal('modal-first');showTab('scan');}
 function goHome(){
@@ -594,7 +632,7 @@ function goHome(){
 }
 function updateHomeInfo(){
   const el=document.getElementById('home-info');
-  if(party.length>0){const top=party.reduce((a,b)=>(b.lev||1)>(a.lev||1)?b:a);el.innerHTML=`パーティ <span>${party.length}/${MAX_PARTY}人</span> ／ 最強 <span>${top.name} LEV${top.lev||1}</span>`;}
+  if(party.length>0){const top=party.reduce((a,b)=>(b.lev||1)>(a.lev||1)?b:a);const bn=bandName?`${bandName} ／ `:'';el.innerHTML=`${bn}メンバー <span>${party.length}/${MAX_PARTY}人</span> ／ <span>${top.name} LEV${top.lev||1}</span>`;}
   else el.textContent='セーブデータなし';
 }
 
@@ -625,7 +663,7 @@ function updateCooldownHint(){
     msg.classList.add('hidden');
   }
 }
-function updateScanTab(){const f=party.length===0;document.getElementById('scan-locked').classList.toggle('hidden',f);document.getElementById('scan-open').style.display=f?'block':'none';}
+function updateScanTab(){const f=party.length<=1;document.getElementById('scan-locked').classList.toggle('hidden',f);document.getElementById('scan-open').style.display=f?'block':'none';}
 
 // ===== PARTY =====
 // 戦士ごとの休憩残り回数を計算
@@ -639,6 +677,9 @@ function setRestForWarrior(i, required) {
 }
 
 function renderParty(){
+  // バンド名表示
+  const bnEl=document.getElementById('band-name-display');
+  if(bnEl) bnEl.textContent=bandName?`★ ${bandName} ★`:'';
   const list=document.getElementById('party-list');list.innerHTML='';
   for(let i=0;i<MAX_PARTY;i++){
     const w=party[i],div=document.createElement('div');
@@ -655,7 +696,7 @@ function renderParty(){
         : '';
       const posBadge = w.position ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#001a33;color:#44aaff;border:1px solid #224466;margin-left:3px;">${w.position}</span>` : '';
       const genreBadge = w.genre ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#1a0033;color:#aa44ff;margin-left:2px;">${w.genre}</span>` : '';
-      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'🎸'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;flex-wrap:wrap;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>${posBadge}${genreBadge}</div><div class="slot-name">${w.name}</div>${restBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})" style="font-size:10px;color:#882222;">クビ</button>`;
+      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'🎸'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;flex-wrap:wrap;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>${posBadge}${genreBadge}</div><div class="slot-name">${w.name}</div><div style="font-size:8px;color:#605850;margin-bottom:1px;">${bandName||''}</div>${restBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})" style="font-size:10px;color:#882222;">クビ</button>`;
     }
     list.appendChild(div);
   }
@@ -1106,7 +1147,12 @@ function resetBattle(){
   setBattlePhase('pre');
   updateCooldownHint();
 }
-function showEnding(){document.getElementById('s-main').style.display='none';document.getElementById('s-ending').style.display='flex';}
+function showEnding(){
+  document.getElementById('s-main').style.display='none';
+  document.getElementById('s-ending').style.display='flex';
+  const el=document.getElementById('ending-band-name');
+  if(el) el.textContent=bandName?`★ ${bandName} ★`:'';
+}
 function restartGame(){
   if(!confirm('データをリセットしますか？'))return;
   party=[];selP1=-1;battleCnt=0;restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;saveAll();
