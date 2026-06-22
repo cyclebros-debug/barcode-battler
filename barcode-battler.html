@@ -21,6 +21,7 @@ body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monosp
 .home-guitar{margin:16px auto;display:flex;justify-content:center;filter:drop-shadow(0 0 18px rgba(255,34,0,.8));animation:guitarFloat 3s ease-in-out infinite;}
 @keyframes guitarFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
 .home-desc{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:20px;}
+.home-mission{font-size:11px;color:#cc4422;border:1px solid #440000;border-radius:6px;padding:8px 12px;margin:0 20px 10px;background:rgba(80,0,0,.2);line-height:1.8;}
 .home-party-info{background:rgba(255,34,0,.08);border:1px solid rgba(255,34,0,.2);border-radius:8px;padding:10px 16px;margin:0 20px 20px;font-size:11px;color:var(--dim);}
 .home-party-info span{color:var(--gold);}
 .home-btn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;letter-spacing:3px;color:#fff;background:linear-gradient(135deg,#880000,#cc0000,#ff2200);border:none;border-radius:6px;padding:16px 0;cursor:pointer;width:calc(100% - 40px);margin:0 20px;display:block;box-shadow:0 0 20px rgba(255,34,0,.4);}
@@ -227,7 +228,8 @@ input:focus{outline:none;border-color:var(--red);}
     <polygon points="100,115 70,185 75,185 103,120" fill="rgba(255,100,0,0.15)"/>
   </svg>
 </div>
-    <div class="home-desc">バーコードをスキャンして戦士を召喚せよ</div>
+    <div class="home-desc">バーコードをスキャンしてメンバーをスカウトせよ</div>
+    <div class="home-mission">売れないローカルバンドから<br/>伝説のバンドへ！<br/>LEV10でロックの殿堂入り！</div>
     <div class="home-party-info" id="home-info">セーブデータなし</div>
     <button class="home-btn" onclick="enterMain()">▶ START GAME</button>
   </div>
@@ -236,21 +238,22 @@ input:focus{outline:none;border-color:var(--red);}
 <!-- MAIN -->
 <div id="s-main">
   <div class="nav">
-    <button class="nav-btn active" onclick="showTab('party')" id="nav-party">⚔ パーティ</button>
+    <button class="nav-btn active" onclick="showTab('party')" id="nav-party">🎸 バンド</button>
     <button class="nav-btn" onclick="showTab('scan')" id="nav-scan">📷 スキャン</button>
     <button class="nav-btn" onclick="showTab('battle')" id="nav-battle">🔥 バトル</button>
   </div>
 
   <!-- PARTY -->
   <div class="tab active" id="tab-party">
-    <div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;">Party Members</div>
+    <div style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase;">Band Members</div>
     <div id="party-list"></div>
-    <button class="btn btn-battle" id="btn-to-battle" onclick="showTab('battle')" disabled>🔥 バトルへ出撃</button>
+    <div id="band-bonus-display" style="margin-bottom:10px;"></div>
+<button class="btn btn-battle" id="btn-to-battle" onclick="showTab('battle')" disabled>🔥 ライブバトルへ</button>
   </div>
 
   <!-- SCAN -->
   <div class="tab" id="tab-scan">
-    <div id="scan-locked" class="msg msg-warn hidden">最初の戦士はバトル勝利で仲間にします。まずバトルへ！</div>
+    <div id="scan-locked" class="msg msg-warn hidden">最初のメンバーはバトル勝利でスカウトします。まずバトルへ！</div>
     <div id="scan-open">
       <div class="card">
         <div class="card-title">バーコードをスキャン</div>
@@ -279,7 +282,7 @@ input:focus{outline:none;border-color:var(--red);}
         <div class="stat-row"><div class="stat-lbl">DF</div><div class="stat-track"><div class="stat-fill" id="prev-df-bar" style="background:var(--blue);width:0%"></div></div><div class="stat-num" id="prev-df">-</div></div>
         <div id="prev-special" style="display:none;font-size:12px;text-align:center;padding:8px;border-radius:6px;margin:8px 0;white-space:pre;"></div>
         <div class="btn-row" style="margin-top:12px;">
-          <button class="btn btn-secondary" onclick="addFirstWarrior()">⚔ 最初の戦士にする</button>
+          <button class="btn btn-secondary" onclick="addFirstWarrior()">🎸 バンドの最初のメンバーにする</button>
           <button class="btn btn-ghost" onclick="resetScan()">✕ やり直す</button>
         </div>
       </div>
@@ -291,7 +294,7 @@ input:focus{outline:none;border-color:var(--red);}
     <div id="cooldown-msg" class="msg msg-warn hidden"></div>
     <div id="p2-scan-area">
       <div class="card">
-        <div class="card-title">敵のバーコードをスキャン（P2）</div>
+        <div class="card-title">対戦相手のバーコードをスキャン</div>
         <div class="cam-wrap" id="cam-p2">
           <video id="video-p2" playsinline autoplay muted></video>
           <div class="scan-guide"></div>
@@ -300,7 +303,7 @@ input:focus{outline:none;border-color:var(--red);}
           <div class="corner bl"></div><div class="corner br"></div>
         </div>
         <div id="p2-msg" class="msg msg-info hidden"></div>
-        <button class="btn btn-secondary" id="btn-scan-p2" onclick="startScan('p2')">📷 敵をスキャン</button>
+        <button class="btn btn-secondary" id="btn-scan-p2" onclick="startScan('p2')">📷 対戦相手をスキャン</button>
         <button class="btn btn-ghost hidden" id="btn-stop-p2" onclick="stopScan('p2')">■ スキャン停止</button>
       </div>
     </div>
@@ -349,8 +352,8 @@ input:focus{outline:none;border-color:var(--red);}
 <!-- ENDING -->
 <div id="s-ending" style="display:none;min-height:100vh;background:#000;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px;">
   <div style="font-size:80px;margin-bottom:16px;">👑</div>
-  <div style="font-family:'Orbitron',sans-serif;font-size:24px;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.8);margin-bottom:12px;">MASTER!</div>
-  <div style="font-size:12px;color:var(--dim);line-height:2;margin-bottom:24px;">LEV 10 到達！<br/>真のバトルマスターになった！！</div>
+  <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,.8);margin-bottom:12px;">LEGENDARY BAND!</div>
+  <div style="font-size:12px;color:var(--dim);line-height:2;margin-bottom:24px;">LEV 10 到達！<br/>伝説のバンドが誕生した！！<br/>ロックの殿堂入りおめでとう！</div>
   <button class="btn btn-battle" onclick="restartGame()" style="max-width:280px;">もう一度挑む</button>
 </div>
 
@@ -364,14 +367,14 @@ input:focus{outline:none;border-color:var(--red);}
     <div class="modal-sub" id="rec-p1-name"></div>
     <div id="rec-exp" class="msg msg-ok" style="margin-bottom:12px;"></div>
     <div style="border-top:1px solid var(--border);padding-top:12px;">
-      <div style="font-size:11px;color:#cc8844;margin-bottom:8px;">敵将を仲間にする？</div>
+      <div style="font-size:11px;color:#cc8844;margin-bottom:8px;">🎸 バンドのメンバーに加える？</div>
       <div class="recruit-card">
         <div class="recruit-icon" id="rec-icon">❓</div>
         <div class="recruit-info"><div class="recruit-name" id="rec-name"></div><div class="recruit-stats" id="rec-stats"></div></div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-recruit-yes" onclick="recruitYes()">✔ 仲間にする</button>
-        <button class="btn btn-recruit-no" onclick="recruitNo()">✕ しない</button>
+        <button class="btn btn-recruit-yes" onclick="recruitYes()">✔ メンバーに加える</button>
+        <button class="btn btn-recruit-no" onclick="recruitNo()">✕ 断る</button>
       </div>
     </div>
   </div>
@@ -379,7 +382,7 @@ input:focus{outline:none;border-color:var(--red);}
 <div class="overlay" id="modal-swap">
   <div class="modal">
     <div class="modal-title" style="font-size:16px;">⚠ パーティ満員</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">放出する戦士を選んでください</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">クビにするメンバーを選んでください</div>
     <div class="swap-list" id="swap-list"></div>
     <button class="btn btn-ghost" onclick="cancelSwap()">✕ 仲間にしない</button>
   </div>
@@ -390,7 +393,7 @@ input:focus{outline:none;border-color:var(--red);}
     <div class="modal-sub" id="def-name"></div>
     <div style="font-size:10px;color:var(--dim);margin-bottom:4px;" id="def-enemy-hp"></div>
     <div id="def-next-area" style="display:none;">
-      <div style="font-size:11px;color:#cc8844;margin-bottom:8px;border-top:1px solid var(--border);padding-top:10px;">次の戦士を選んで再戦！</div>
+      <div style="font-size:11px;color:#cc8844;margin-bottom:8px;border-top:1px solid var(--border);padding-top:10px;">🎸 次のメンバーを選んで再戦！</div>
       <div class="swap-list" id="def-fighter-list"></div>
     </div>
     <div id="def-all-down" style="display:none;">
@@ -401,15 +404,15 @@ input:focus{outline:none;border-color:var(--red);}
 </div>
 <div class="overlay" id="modal-first">
   <div class="modal">
-    <div class="modal-title" style="font-size:16px;">⚔ 最初の戦士</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.7;">バーコードをスキャンして<br/>最初の戦士を召喚せよ！<br/>その後はバトルで勝利して<br/>仲間を増やせ。</div>
+    <div class="modal-title" style="font-size:16px;">🎸 バンド結成</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.7;">売れないローカルバンドの<br/>リーダーとして出発！<br/>伝説のミュージシャンを<br/>スカウトして伝説のバンドを<br/>結成せよ！</div>
     <button class="btn btn-primary" onclick="closeFirst()">スキャンへ</button>
   </div>
 </div>
 <div class="overlay" id="modal-heroname">
   <div class="modal">
-    <div class="modal-title" style="font-size:16px;">⚔ 主人公の名前</div>
-    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">あなたの戦士の名前を<br/>入力してください</div>
+    <div class="modal-title" style="font-size:16px;">🎸 バンドリーダーの名前</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">あなたのバンドリーダーの<br/>名前を入力してください</div>
     <input type="text" id="input-heroname" placeholder="名前を入力..." maxlength="10" style="text-align:center;"/>
     <button class="btn btn-primary" onclick="confirmHeroName()">決定</button>
   </div>
@@ -417,7 +420,18 @@ input:focus{outline:none;border-color:var(--red);}
 
 <script>
 // ===== CONFIG =====
-const MAX_PARTY=5, COOLDOWN_WIN=1, COOLDOWN_LOSE=3, BOSS_THRESHOLD=7, FLASH_BIG=40;
+const MAX_PARTY=4, COOLDOWN_WIN=1, COOLDOWN_LOSE=3, BOSS_THRESHOLD=7, FLASH_BIG=40;
+const POSITIONS=['Vo','Gt','Ba','Dr'];
+const POS_BONUS={
+  'Vo':{hp:40,at:0,df:0,desc:'カリスマボーカル・HP特化'},
+  'Gt':{hp:0,at:25,df:0,desc:'テクニカルギタリスト・AT特化'},
+  'Ba':{hp:0,at:0,df:25,desc:'タイトなベーシスト・DF特化'},
+  'Dr':{hp:15,at:10,df:10,desc:'パワフルドラマー・バランス型'},
+};
+// ジャンル定義
+const GENRES=['LAメタル','正統派HM','スラッシュ','グランジ','パワーメタル','アリーナロック','プログレ'];
+const GENRE_BONUS=15; // 同ジャンル揃いボーナス（AT/DF各+15）
+const FULL_BAND_BONUS=20; // 4人全員揃いボーナス
 const RARE_THR={SSR:97,SR:85,R:60};
 const RARE_BONUS={N:{hp:0,at:0,df:0},R:{hp:20,at:5,df:5},SR:{hp:50,at:15,df:10},SSR:{hp:100,at:30,df:20}};
 // 16bitゲームキャラ風スプライト絵文字（ドット絵っぽい表現）
@@ -548,7 +562,15 @@ function calcStats(code,isP2){
   if(isP2){isFemale=(parseInt(d.slice(-1))%5===0);if(isFemale){name=NAMES_F[parseInt(d.slice(-3))%NAMES_F.length];icon=ICONS_F[parseInt(d.slice(-4))%ICONS_F.length];}else{name=NAMES_M[parseInt(d.slice(-3))%NAMES_M.length];icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}if(isBoss)name='[BOSS]'+name;}
   else{name=heroName||'ヒーロー';const wtIdx=parseInt(d.slice(-4))%WARRIOR_TYPES.length;icon=WARRIOR_TYPES[wtIdx].icon+'️';}
   const special=calcSpecial(d);
-  return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale,lev:1,exp:0,code:d,special,isBoss};
+  // ポジション決定（バーコードの数字から）
+  const posIdx=parseInt(d.slice(-2))%4;
+  const position=POSITIONS[posIdx];
+  const pb=POS_BONUS[position];
+  hp+=pb.hp; at+=pb.at; df+=pb.df;
+  // ジャンル決定
+  const genreIdx=parseInt(d.slice(-3))%GENRES.length;
+  const genre=GENRES[genreIdx];
+  return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale,position,genre,lev:1,exp:0,code:d,special,isBoss};
 }
 
 // ===== SCREEN =====
@@ -631,13 +653,27 @@ function renderParty(){
       const restBadge = isResting
         ? `<span class="rest-badge">休憩中 残り${restLeft}回</span>`
         : '';
-      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'⚔️'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span></div><div class="slot-name">${w.name}</div>${restBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})">✕</button>`;
+      const posBadge = w.position ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#001a33;color:#44aaff;border:1px solid #224466;margin-left:3px;">${w.position}</span>` : '';
+      const genreBadge = w.genre ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#1a0033;color:#aa44ff;margin-left:2px;">${w.genre}</span>` : '';
+      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'🎸'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;flex-wrap:wrap;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>${posBadge}${genreBadge}</div><div class="slot-name">${w.name}</div>${restBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})" style="font-size:10px;color:#882222;">クビ</button>`;
     }
     list.appendChild(div);
   }
   // 選択中の戦士が休憩中なら選択解除
   if(selP1>=0 && getRestInfo(selP1)>0) selP1=-1;
   document.getElementById('btn-to-battle').disabled=selP1<0||party.length===0;
+  // バンドボーナス表示
+  const bbEl=document.getElementById('band-bonus-display');
+  if(bbEl){
+    const bonuses=calcBandBonus();
+    if(bonuses&&bonuses.length>0){
+      bbEl.innerHTML=bonuses.map(b=>`<div style="font-size:10px;color:var(--gold);background:rgba(100,80,0,0.2);border:1px solid #664400;border-radius:5px;padding:5px 8px;margin-bottom:4px;">🎸 ${b.label}：AT+${b.at} DF+${b.df}</div>`).join('');
+    } else if(party.length===MAX_PARTY){
+      bbEl.innerHTML='<div style="font-size:9px;color:var(--dim);text-align:center;">同ジャンルで揃えるとバンドボーナス発動！</div>';
+    } else {
+      bbEl.innerHTML=`<div style="font-size:9px;color:var(--dim);text-align:center;">あと${MAX_PARTY-party.length}人でバンド完成！</div>`;
+    }
+  }
 }
 function selectP1(i){
   const restLeft=getRestInfo(i);
@@ -866,7 +902,15 @@ async function executeBattle(){
   const log=document.getElementById('battle-log');
   const push=(text,color)=>{const s=document.createElement('span');s.textContent=text+'\n';if(color)s.style.color=color;log.appendChild(s);log.scrollTop=log.scrollHeight;};
   const curW=party[currentFighterIdx];
-  const p1={...curW};const p1Max=p1.hp;
+  const p1={...curW};
+  // バンドボーナス適用
+  const bandBonuses=calcBandBonus();
+  if(bandBonuses){
+    bandBonuses.forEach(b=>{p1.at+=b.at;p1.df+=b.df;});
+    push(`🎸 バンドボーナス発動！AT+${bandBonuses.reduce((s,b)=>s+b.at,0)} DF+${bandBonuses.reduce((s,b)=>s+b.df,0)}`,'var(--gold)');
+    await sleep(400);
+  }
+  const p1Max=p1.hp;
   let p2={...p2Warrior};
   log.textContent='';
   push(`${p1.name} VS ${p2.name}！`);await sleep(600);
@@ -953,6 +997,24 @@ function selectNextFighter(idx){
 
 function defeatGiveUp(){closeModal('modal-defeat');resetBattle();}
 function closeDefeat(){closeModal('modal-defeat');resetBattle();}
+
+// バンドボーナス計算
+function calcBandBonus(){
+  if(party.length<MAX_PARTY) return null;
+  const positions=party.map(w=>w.position||'');
+  const hasAll=['Vo','Gt','Ba','Dr'].every(p=>positions.includes(p));
+  const genres=party.map(w=>w.genre||'');
+  const genreCount={};
+  genres.forEach(g=>{genreCount[g]=(genreCount[g]||0)+1;});
+  const sameGenre=Object.values(genreCount).some(c=>c>=4);
+  const bonuses=[];
+  if(hasAll) bonuses.push({label:'全員集合ボーナス',at:FULL_BAND_BONUS,df:FULL_BAND_BONUS});
+  if(sameGenre){
+    const g=Object.keys(genreCount).find(k=>genreCount[k]>=4);
+    bonuses.push({label:`${g}統一ボーナス`,at:GENRE_BONUS,df:GENRE_BONUS});
+  }
+  return bonuses.length>0?bonuses:null;
+}
 
 // バトル1回終了後に全員の休憩カウントを-1する
 function tickRestAll(){
