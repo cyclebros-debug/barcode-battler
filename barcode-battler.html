@@ -247,7 +247,10 @@ input:focus{outline:none;border-color:var(--red);}
           <div class="fighter-name" id="fn-p1">---</div>
           <div class="fighter-hp-bar"><div class="fighter-hp-fill" id="fhp-p1" style="width:100%;background:var(--green)"></div></div>
           <div class="fighter-hp-num" id="fhn-p1" style="color:var(--green)">HP: ---</div>
-          <div id="fstats-p1" style="font-size:9px;color:var(--dim);margin-top:2px;"></div>
+          <div style="display:flex;gap:8px;margin-top:3px;">
+            <span style="font-size:9px;color:var(--red)">AT:<span id="fat-p1">-</span></span>
+            <span style="font-size:9px;color:var(--blue)">DF:<span id="fdf-p1">-</span></span>
+          </div>
         </div>
       </div>
       <div class="vs-line">- VS -</div>
@@ -257,6 +260,10 @@ input:focus{outline:none;border-color:var(--red);}
           <div class="fighter-name" id="fn-p2">---</div>
           <div class="fighter-hp-bar"><div class="fighter-hp-fill" id="fhp-p2" style="width:100%;background:var(--blue)"></div></div>
           <div class="fighter-hp-num" id="fhn-p2" style="color:var(--blue)">HP: ---</div>
+          <div style="display:flex;gap:8px;margin-top:3px;">
+            <span style="font-size:9px;color:var(--red)">AT:<span id="fat-p2">-</span></span>
+            <span style="font-size:9px;color:var(--blue)">DF:<span id="fdf-p2">-</span></span>
+          </div>
         </div>
       </div>
       <div class="battle-log" id="battle-log">バトル開始を待っています...</div>
@@ -517,6 +524,8 @@ function showTab(id){
       if(restPerWarrior[k]>0){restPerWarrior[k]--;changed=true;}
       if(restPerWarrior[k]<=0) delete restPerWarrior[k];
     });
+    // 選択中の戦士が休憩中になったら選択解除
+    if(selP1>=0 && getRestInfo(selP1)>0) selP1=-1;
     if(!canBattleNow()){restCnt=Math.min(restRequired,restCnt+1);}
     if(changed)saveAll();
   }
@@ -538,10 +547,10 @@ function updateScanTab(){const f=party.length===0;document.getElementById('scan-
 // 戦士ごとの休憩残り回数を計算
 // 選択中の戦士が休憩中かどうか（selP1が最後に戦った戦士）
 function getRestInfo(i) {
-  return restPerWarrior[i] || 0;
+  return restPerWarrior[String(i)] || 0;
 }
 function setRestForWarrior(i, required) {
-  restPerWarrior[i] = required;
+  restPerWarrior[String(i)] = required;
   saveAll();
 }
 
@@ -773,10 +782,17 @@ function setBattlePhase(phase){
 function updateFighterBar(){const w=party[currentFighterIdx];if(!w)return;document.getElementById('current-fighter-bar').textContent=`出撃中: ${w.name} (LEV${w.lev||1}) [${currentFighterIdx+1}/${party.length}人目]`;}
 function setFighter(side,w,hp,maxHp){
   const pct=Math.max(0,hp/maxHp*100),col=pct>50?'var(--green)':pct>25?'#ccaa00':'var(--red)';
-  document.getElementById(`fi-${side}`).textContent=w.icon||(side==='p1'?'⚔️':'🛡️');
-  document.getElementById(`fn-${side}`).textContent=(side==='p1'?`${w.name} LEV${w.lev||1}`:w.name+(w.isBoss?' BOSS':''));
-  document.getElementById(`fhp-${side}`).style.width=pct+'%';document.getElementById(`fhp-${side}`).style.background=col;
-  document.getElementById(`fhn-${side}`).textContent=`HP: ${hp}`;document.getElementById(`fhn-${side}`).style.color=col;
+  document.getElementById(`fi-${side}`).textContent=w.icon||'⚔️';
+  document.getElementById(`fn-${side}`).textContent=(side==='p1'?`${w.name} LEV${w.lev||1}`:w.name+(w.isBoss?' 👑BOSS':''));
+  document.getElementById(`fhp-${side}`).style.width=pct+'%';
+  document.getElementById(`fhp-${side}`).style.background=col;
+  document.getElementById(`fhn-${side}`).textContent=`HP: ${hp}`;
+  document.getElementById(`fhn-${side}`).style.color=col;
+  // AT/DF表示
+  const atEl=document.getElementById(`fat-${side}`);
+  const dfEl=document.getElementById(`fdf-${side}`);
+  if(atEl) atEl.textContent=w.at;
+  if(dfEl) dfEl.textContent=w.df;
 }
 function flash(color){const el=document.getElementById('flash-overlay');el.style.background=color;el.style.display='block';el.style.opacity='0.5';let op=0.5;const f=setInterval(()=>{op-=0.06;el.style.opacity=op;if(op<=0){el.style.display='none';clearInterval(f);}},30);}
 
@@ -818,7 +834,6 @@ async function executeBattle(){
   if(p2.hp<=0){
     push(`${p2.name} を倒した！`,'var(--gold)');await sleep(400);
     battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;
-    setRestForWarrior(currentFighterIdx,COOLDOWN_WIN);
     setBattlePhase('pre');onVictory(push);
   } else {
     push(`${p1.name} は倒れた！`,'#ff4444');await sleep(600);
@@ -875,13 +890,23 @@ function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
-  // selP1を現在の戦士に確実に設定
   selP1=idx;
-  party[idx].exp=(party[idx].exp||0)+3;let levMsg='';
-  while(party[idx].exp>=100){party[idx].exp-=100;party[idx].lev=(party[idx].lev||1)+1;party[idx].hp+=10;party[idx].maxHp+=10;party[idx].at+=3;party[idx].df+=2;levMsg+=`\nLEVEL UP! LEV${party[idx].lev}`;push(levMsg,'var(--purple)');
-    if(party[idx].lev>=10){saveAll();renderParty();setTimeout(showEnding,800);return;}}
+  // 勝利後も必ず1回休憩
+  setRestForWarrior(idx, COOLDOWN_WIN);
+  party[idx].exp=(party[idx].exp||0)+3;
+  let levMsg='';
+  while(party[idx].exp>=100){
+    party[idx].exp-=100;
+    party[idx].lev=(party[idx].lev||1)+1;
+    party[idx].hp+=10;party[idx].maxHp+=10;
+    party[idx].at+=3;party[idx].df+=2;
+    levMsg+=`\nLEVEL UP! LEV${party[idx].lev}`;
+    push(levMsg,'var(--purple)');
+    if(party[idx].lev>=10){saveAll();renderParty();setTimeout(showEnding,800);return;}
+  }
   saveAll();renderParty();updateCooldownHint();
-  showRecruitModal(p2Warrior);
+  // 必ず仲間にするか確認
+  if(p2Warrior) showRecruitModal(p2Warrior);
 }
 
 function showRecruitModal(p2){
