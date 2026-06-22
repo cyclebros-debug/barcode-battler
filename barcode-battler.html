@@ -900,11 +900,7 @@ function tickRestAll(){
 
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
-  selP1=idx;
-  // バトル終了で全員のカウントを先に-1
-  tickRestAll();
-  // 勝利したこの戦士は新たに1回休憩をセット
-  setRestForWarrior(idx, COOLDOWN_WIN);
+  // EXP加算
   party[idx].exp=(party[idx].exp||0)+3;
   let levMsg='';
   while(party[idx].exp>=100){
@@ -914,22 +910,37 @@ function onVictory(push){
     party[idx].at+=3;party[idx].df+=2;
     levMsg+=`\nLEVEL UP! LEV${party[idx].lev}`;
     push(levMsg,'var(--purple)');
-    if(party[idx].lev>=10){saveAll();renderParty();setTimeout(showEnding,800);return;}
+    if(party[idx].lev>=10){
+      // バトル終了処理
+      tickRestAll();
+      setRestForWarrior(idx,COOLDOWN_WIN);
+      selP1=idx;
+      saveAll();renderParty();
+      setTimeout(showEnding,800);return;
+    }
   }
+  // バトル終了処理（休憩はここでセット）
+  tickRestAll();
+  setRestForWarrior(idx,COOLDOWN_WIN);
+  selP1=idx;
   saveAll();renderParty();updateCooldownHint();
-  // 必ず仲間にするか確認
-  if(p2Warrior) showRecruitModal(p2Warrior);
+  // 必ず仲間にするか確認（idxを直接渡す）
+  showRecruitModal(p2Warrior, idx);
 }
 
-function showRecruitModal(p2){
-  const p1=party[selP1];
-  if(!p1){resetBattle();return;} // ガード
+function showRecruitModal(p2, p1Idx){
+  // p1Idxが指定されていない場合はselP1を使う
+  const pidx = (p1Idx !== undefined) ? p1Idx : selP1;
+  const p1=party[pidx];
+  if(!p1||!p2){resetBattle();return;}
   document.getElementById('rec-p1-name').textContent=p1.name;
   document.getElementById('rec-exp').textContent=`EXP: ${p1.exp||0}/100`;
   document.getElementById('rec-icon').textContent=p2.icon||'❓';
   document.getElementById('rec-name').textContent=`${p2.name}${p2.isFemale?' ♀':' ♂'} [${p2.rarity}]`;
-  let st=`HP:${p2.hp} AT:${p2.at} DF:${p2.df}`;if(p2.special)st+=`\n${p2.special.label}`;
-  document.getElementById('rec-stats').textContent=st;showModal('modal-recruit');
+  let st=`HP:${p2.hp} AT:${p2.at} DF:${p2.df}`;
+  if(p2.special)st+=`\n${p2.special.label}`;
+  document.getElementById('rec-stats').textContent=st;
+  showModal('modal-recruit');
 }
 
 function recruitYes(){
