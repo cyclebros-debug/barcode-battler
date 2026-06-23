@@ -368,7 +368,7 @@ input:focus{outline:none;border-color:var(--red);}
       <span id="leave-name"></span> <span id="leave-part" style="color:var(--dim)"></span>
     </div>
     <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.8;">
-      「もうこのバンドはうんざりだ。<br/>辞めさせてもらう！」<br/>
+      「最近全然バトルに出してもらえない...<br/>このバンドにいる意味がない。辞める！」<br/>
       <span style="font-size:9px;color:#664444;">（なだめても50%の確率で脱退）</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -1278,9 +1278,13 @@ function renderParty(){
       const restBadge = isResting
         ? `<span class="rest-badge">休憩中 残り${restLeft}回</span>`
         : '';
+      const absent = w.absentCount||0;
+      const absentBadge = (i!==0&&absent>0)
+        ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;${absent>=5?'background:#2a0000;color:#ff6644;border:1px solid #ff4422;':'background:#1a1000;color:#aa6622;'}margin-top:2px;">不参加:${absent}/7回</span>`
+        : '';
       const posBadge = w.position ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#001a33;color:#44aaff;border:1px solid #224466;margin-left:3px;">${w.position}</span>` : '';
       const genreBadge = w.genre ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#1a0033;color:#aa44ff;margin-left:2px;">${w.genre}</span>` : '';
-      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'🎸'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;flex-wrap:wrap;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>${posBadge}${genreBadge}</div><div class="slot-name">${w.name}</div><div style="font-size:8px;color:#605850;margin-bottom:1px;">${bandName||''}</div>${restBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/100</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})" style="font-size:10px;color:#882222;">クビ</button>`;
+      div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'🎸'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;flex-wrap:wrap;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>${posBadge}${genreBadge}</div><div class="slot-name">${w.name}</div><div style="font-size:8px;color:#605850;margin-bottom:1px;">${bandName||''}</div>${restBadge}${absentBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/20</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})" style="font-size:10px;color:#882222;">クビ</button>`;
     }
     list.appendChild(div);
   }
@@ -1676,11 +1680,11 @@ let pendingLeaveIdx = -1; // 脱退要求中のメンバーインデックス
 function checkLeaveRequest(){
   // 既に脱退要求中なら何もしない
   if(pendingLeaveIdx >= 0) return;
-  // 7回バトルしたメンバーを探す
+  // 7回バトルに参加させなかったメンバーを探す
   for(let i=0;i<party.length;i++){
     if(i===0) continue; // リーダーは脱退しない
     const w=party[i];
-    if((w.battleCount||0)>=LEAVE_BATTLE_COUNT){
+    if((w.absentCount||0)>=LEAVE_BATTLE_COUNT){
       pendingLeaveIdx=i;
       showLeaveModal(i);
       return;
@@ -1716,7 +1720,7 @@ function leaveCalm(){
   if(pendingLeaveIdx<0) return;
   if(Math.random()<0.5){
     // なだめ成功 → バトルカウントリセット
-    party[pendingLeaveIdx].battleCount=0;
+    party[pendingLeaveIdx].absentCount=0;
     pendingLeaveIdx=-1;
     saveAll();renderParty();
     const msg=document.getElementById('calm-result');
@@ -1747,11 +1751,18 @@ function tickRestAll(){
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
   // EXP加算
-  // バトルカウント増加（リーダー以外）
-  party.forEach((w,i)=>{if(i!==0) w.battleCount=(w.battleCount||0)+1;});
+  // 参加したメンバーの不参加カウントをリセット、参加しなかったメンバーは+1
+  party.forEach((w,i)=>{
+    if(i===0) return; // リーダーは対象外
+    if(i===idx){
+      w.absentCount=0; // 参加したのでリセット
+    } else {
+      w.absentCount=(w.absentCount||0)+1; // 不参加カウント+1
+    }
+  });
   party[idx].exp=(party[idx].exp||0)+3;
   let levMsg='';
-  while(party[idx].exp>=100){
+  while(party[idx].exp>=20){
     party[idx].exp-=100;
     party[idx].lev=(party[idx].lev||1)+1;
     party[idx].hp+=10;party[idx].maxHp+=10;
