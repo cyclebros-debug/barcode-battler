@@ -360,6 +360,23 @@ input:focus{outline:none;border-color:var(--red);}
   <button class="btn btn-battle" onclick="restartGame()" style="max-width:280px;">もう一度挑む</button>
 </div>
 
+<!-- 脱退モーダル -->
+<div class="overlay" id="modal-leave">
+  <div class="modal">
+    <div class="modal-title" style="font-size:16px;color:#ff8800;">⚠ 脱退要求</div>
+    <div style="font-size:12px;color:#e0c080;margin-bottom:4px;">
+      <span id="leave-name"></span> <span id="leave-part" style="color:var(--dim)"></span>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;line-height:1.8;">
+      「もうこのバンドはうんざりだ。<br/>辞めさせてもらう！」<br/>
+      <span style="font-size:9px;color:#664444;">（なだめても50%の確率で脱退）</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn btn-gold" onclick="leaveCalm()">🎸 なだめる</button>
+      <button class="btn btn-ghost" onclick="leaveYes()">✕ 脱退させる</button>
+    </div>
+  </div>
+</div>
 <!-- フラッシュ -->
 <div id="flash-overlay" style="display:none;position:fixed;inset:0;z-index:500;pointer-events:none;"></div>
 
@@ -435,6 +452,15 @@ input:focus{outline:none;border-color:var(--red);}
 // ===== CONFIG =====
 const MAX_PARTY=4, COOLDOWN_WIN=1, COOLDOWN_LOSE=3, BOSS_THRESHOLD=7, FLASH_BIG=40;
 const POSITIONS=['Vo','Gt','Ba','Dr'];
+// パート別人物アイコン（人の顔）
+const PART_ICONS={
+  'Vo':'🧑‍🎤',
+  'Gt':'🧑‍🎸',
+  'Ba':'🧑‍🎸',
+  'Dr':'🥁',
+};
+// パート別デフォルトアイコン（シンプル人顔）
+const FACE_ICONS=['👨','👩','🧑','👱','👴','👵','🧔','👮','🕵️','🧝','🧙','👨‍🎤','👩‍🎤','👨‍🎸','👩‍🎸'];
 const POS_BONUS={
   'Vo':{hp:40,at:0,df:0,desc:'カリスマボーカル・HP特化'},
   'Gt':{hp:0,at:25,df:0,desc:'テクニカルギタリスト・AT特化'},
@@ -482,68 +508,618 @@ const WARRIOR_TYPES_F = [
   {icon:'🌺', label:'フローレス'},
 ];
 const ICONS_F = WARRIOR_TYPES_F.map(t=>t.icon+'\u{FE0F}');
-// ===== 敵キャラ名：ヘヴィメタルミュージシャン =====
-const NAMES_M=[
-  // LAメタル/グラムメタル
-  'ヴィンス・ニール','ニッキー・シックス','トミー・リー','ミック・マーズ',
-  'スティーヴン・パーシー','ウォーレン・デ・マルティーニ','ブレット・マイヤーズ','C.C.デヴィル',
-  'トム・キーファー','ケヴィン・ダブロウ','カルロス・カヴァーゾ','ドン・ドッケン','ジョージ・リンチ',
-  'ブラッキー・ローレス','クリス・ホルムズ','マーク・スローター','キップ・ウィンガー','レブ・ビーチ',
-  'フィリップ・ルイス','トレイシー・ガンズ',
-  // 正統派HR/HM & NWOBHM
-  'ブルース・ディッキンソン','スティーヴ・ハリス','エイドリアン・スミス','デイヴ・マーレイ',
-  'ロブ・ハルフォード','グレン・ティプトン','K.K.ダウニング',
-  'オジー・オズボーン','ランディ・ローズ','ジェイク・E・リー','ザック・ワイルド',
-  'ロニー・ジェイムス・ディオ','ヴィヴィアン・キャンベル',
-  'レミー・キルミスター','ビフ・バイフォード',
-  'ウド・ダークシュナイダー','ウルフ・ホフマン',
-  'デヴィッド・カヴァーデール','ジョン・サイクス',
-  'ジョー・エリオット','フィル・コリン','スティーヴ・クラーク',
-  'アンガス・ヤング','マルコム・ヤング','ブライアン・ジョンソン',
-  'クラウス・マイネ','ルドルフ・シェンカー','マティアス・ヤプス',
-  'キング・ダイヤモンド','ハンク・シャーマン',
-  // スラッシュメタル
-  'ジェイムズ・ヘットフィールド','カーク・ハメット','ラーズ・ウルリッヒ','クリフ・バートン',
-  'トム・アラヤ','ケリー・キング','ジェフ・ハンネマン','デイヴ・ロンバード',
-  'デイヴ・ムステイン','マーティ・フリードマン','デイヴィッド・エレフソン',
-  'スコット・イアン','ジョーイ・ベラドナ','チャーリー・ベナンテ',
-  'チャック・ビリー','エリック・ピーターソン','アレックス・スコルニック',
-  'マックス・カヴァレラ','ジーン・ホグラン','ゲイリー・ホルト',
-  // シアトル系/グランジ
-  'クリス・コーネル','カート・コバーン','レイン・ステイリー','ジェリー・カントレル',
-  'エディ・ヴェダー','マイク・マクレディ','デイヴ・グロール',
-  'スコット・ウェイランド','ビリー・コーガン',
-  // パワーメタル
-  'カイ・ハンセン','マイケル・キスケ','アンディ・デリス',
-  'ハンズィ・キアシュ','ティモ・トルキ','トビアス・サメット',
-  'サム・トットマン','ハーマン・リ','クリス・インペリテリ',
-  // スタジアムHR/アリーナロック
-  'ジョン・ボン・ジョヴィ','リッチー・サンボラ',
-  'アクセル・ローズ','スラッシュ','ダフ・マッケイガン','イジー・ストラドリン',
-  'セバスチャン・バック','スティーヴ・ヴァイ',
-  'ビリー・シーン','エリック・マーティン','ポール・ギルバート',
-  'ヌーノ・ベッテンコート','ゲイリー・シェローン',
-  'エディ・ヴァン・ヘイレン','サミー・ヘイガー',
-  // ネオクラシカル/プログレ/モダン
-  'イングヴェイ・マルムスティーン',
-  'ジェイムズ・ラブリエ','ジョン・ペトルーシ','マイク・ポートノイ',
-  'ジェフ・テイト','マイケル・ロメオ','ミカエル・オーカーフェルト',
-  'フィリップ・アンセルモ','ダイムバッグ・ダレル','ヴィニー・ポール',
-  'コリィ・テイラー','ミック・トムソン','ジム・ルート','ジョーイ・ジョーディソン',
-  'ジョナサン・デイヴィス','チェスター・ベニントン',
-  'チノ・モレノ','ザック・デ・ラ・ロッチャ','トム・モレロ','メイナード・ジェームズ・キーナン',
+const MUSICIAN_LIST = [
+  {name:'ヴィンス・ニール',part:'Vo'},
+  {name:'ニッキー・シックス',part:'Ba'},
+  {name:'トミー・リー',part:'Dr'},
+  {name:'ミック・マーズ',part:'Gt'},
+  {name:'スティーヴン・パーシー',part:'Vo'},
+  {name:'ウォーレン・デ・マルティーニ',part:'Gt'},
+  {name:'ロビン・クロスビー',part:'Gt'},
+  {name:'フォアン・クルーシェ',part:'Ba'},
+  {name:'ブレット・マイヤーズ',part:'Vo'},
+  {name:'C.C.デヴィル',part:'Gt'},
+  {name:'リッキー・ロケット',part:'Dr'},
+  {name:'ボビー・ダル',part:'Ba'},
+  {name:'トム・キーファー',part:'Vo/Gt'},
+  {name:'ジェフ・ラバー',part:'Gt'},
+  {name:'エリック・ブリッティンガム',part:'Ba'},
+  {name:'フレッド・コウリー',part:'Dr'},
+  {name:'ケヴィン・ダブロウ',part:'Vo'},
+  {name:'カルロス・カヴァーゾ',part:'Gt'},
+  {name:'フランキー・バネリ',part:'Dr'},
+  {name:'ルディ・サーゾ',part:'Ba'},
+  {name:'ドン・ドッケン',part:'Vo'},
+  {name:'ジョージ・リンチ',part:'Gt'},
+  {name:'ジェフ・ピルソン',part:'Ba'},
+  {name:'ミック・ブラウン',part:'Dr'},
+  {name:'スティーヴ・ペリー',part:'Vo'},
+  {name:'クリス・ハガー',part:'Gt'},
+  {name:'アミール・デラク',part:'Gt'},
+  {name:'マット・ソーラム',part:'Dr'},
+  {name:'ジェイル・ハウス',part:'Gt'},
+  {name:'マイケル・スウィート',part:'Vo/Gt'},
+  {name:'ロバート・スウィート',part:'Dr'},
+  {name:'オズ・フォックス',part:'Gt'},
+  {name:'ティム・ゲインズ',part:'Ba'},
+  {name:'ブラッキー・ローレス',part:'Vo/Ba'},
+  {name:'クリス・ホルムズ',part:'Gt'},
+  {name:'ランディ・パイパー',part:'Gt'},
+  {name:'トニー・リチャーズ',part:'Dr'},
+  {name:'ロン・キール',part:'Vo'},
+  {name:'マーク・フェラーリ',part:'Gt'},
+  {name:'ブライアン・ジェイ',part:'Gt'},
+  {name:'ドワィン・ミューア',part:'Dr'},
+  {name:'マシュー・ネルソン',part:'Vo/Ba'},
+  {name:'ガンナー・ネルソン',part:'Vo/Gt'},
+  {name:'テディ・アンディ',part:'Gt'},
+  {name:'スリーズ・ラファエル',part:'Vo'},
+  {name:'ヴぃにー・チャス',part:'Ba'},
+  {name:'カリ・「カリー」・カイル',part:'Dr'},
+  {name:'タミ・ダウン',part:'Vo'},
+  {name:'グレッグ・スティール',part:'Gt'},
+  {name:'ブレント・マスカット',part:'Gt'},
+  {name:'フィリップ・ルイス',part:'Vo'},
+  {name:'トレイシー・ガンズ',part:'Gt'},
+  {name:'スティーヴ・ライリー',part:'Dr'},
+  {name:'ケリー・ニッケルズ',part:'Ba'},
+  {name:'マイケルモンロー',part:'Vo'},
+  {name:'アンディ・マッコイ',part:'Gt'},
+  {name:'ナスティ・スーサイド',part:'Gt'},
+  {name:'サミ・ヤッファ',part:'Ba'},
+  {name:'ラズル',part:'Dr'},
+  {name:'マーク・スローター',part:'Vo'},
+  {name:'ティム・ケリー',part:'Gt'},
+  {name:'ダナ・ストラム',part:'Ba'},
+  {name:'ブラス・エリアス',part:'Dr'},
+  {name:'キップウィンガー',part:'Vo/Ba'},
+  {name:'レブ・ビーチ',part:'Gt'},
+  {name:'ロッド・モーゲンスタイン',part:'Dr'},
+  {name:'スティール・パンサー',part:'Vo'},
+  {name:'サッチェル',part:'Gt'},
+  {name:'レキシ・フォックス',part:'Ba'},
+  {name:'スティックス・ザディニア',part:'Dr'},
+  {name:'ジャッキー・エン',part:'Vo'},
+  {name:'ダニー・ディ・ローザ',part:'Gt'},
+  {name:'ハリー・コーディー',part:'Gt'},
+  {name:'ジニ・サザン',part:'Vo'},
+  {name:'ボビー・アイズ',part:'Ba'},
+  {name:'マイーク・トランプ',part:'Vo'},
+  {name:'ヴィト・ブラッタ',part:'Gt'},
+  {name:'ジェームズ・ロメンゾ',part:'Ba'},
+  {name:'グレッグ・D\'Angelo',part:'Dr'},
+  {name:'ジェイニ・レイン',part:'Vo'},
+  {name:'ジョーイ・アレン',part:'Gt'},
+  {name:'エリック・ターナー',part:'Gt'},
+  {name:'ジェリー・ディクソン',part:'Ba'},
+  {name:'スティーヴ・スウィート',part:'Dr'},
+  {name:'ジザ・ペリア',part:'Vo'},
+  {name:'ジョルジ・デ・サンティス',part:'Gt'},
+  {name:'スティーヴ・プラザ',part:'Gt'},
+  {name:'ロキシー・ペトルーシ',part:'Dr'},
+  {name:'ジャネット・ガードナー',part:'Vo/Gt'},
+  {name:'ジェニ・レイ',part:'Gt'},
+  {name:'シェア・ペドラム',part:'Ba'},
+  {name:'リジー・ボーデン',part:'Vo'},
+  {name:'ペペ・クラーク',part:'Dr'},
+  {name:'トニー・マトゥザ',part:'Gt'},
+  {name:'ケリー・ハンセン',part:'Vo'},
+  {name:'ロバート・サーゾ',part:'Gt'},
+  {name:'トニー・カヴァーゾ',part:'Ba'},
+  {name:'ジェイ・シェレン',part:'Dr'},
+  {name:'ロバート・メイソン',part:'Vo'},
+  {name:'マイク・コーダ',part:'Gt'},
+  {name:'ブルース・ディッキンソン',part:'Vo'},
+  {name:'スティーヴ・ハリス',part:'Ba'},
+  {name:'エイドリアン・スミス',part:'Gt'},
+  {name:'デイヴ・マーレイ',part:'Gt'},
+  {name:'ヤニック・ギアーズ',part:'Gt'},
+  {name:'ニコ・マクブレイン',part:'Dr'},
+  {name:'ポール・ディアノ',part:'Vo'},
+  {name:'クライヴ・バー',part:'Dr'},
+  {name:'ロブ・ハルフォード',part:'Vo'},
+  {name:'グレン・ティプトン',part:'Gt'},
+  {name:'Ｋ.Ｋ.ダウニング',part:'Gt'},
+  {name:'イアン・ヒル',part:'Ba'},
+  {name:'スコット・トラヴィス',part:'Dr'},
+  {name:'デイヴ・ホーランド',part:'Dr'},
+  {name:'オジー・オズボーン',part:'Vo'},
+  {name:'ランディ・ローズ',part:'Gt'},
+  {name:'ジェイク・E・リー',part:'Gt'},
+  {name:'ザック・ワイルド',part:'Gt'},
+  {name:'ボブ・デイズリー',part:'Ba'},
+  {name:'リー・カースレイク',part:'Dr'},
+  {name:'トミー・アルドリッジ',part:'Dr'},
+  {name:'ロニー・ジェイムス・ディオ',part:'Vo'},
+  {name:'ヴィヴィアン・キャンベル',part:'Gt'},
+  {name:'ジミー・ベイン',part:'Ba'},
+  {name:'ヴィニー・アピス',part:'Dr'},
+  {name:'クレイグ・ゴールドシー',part:'Gt'},
+  {name:'レミー・キルミスター',part:'Vo/Ba'},
+  {name:'“ファスト”・エディ・クラーク',part:'Gt'},
+  {name:'“フィルシー・アニマル”・テイラー',part:'Dr'},
+  {name:'フィル・キャンベル',part:'Gt'},
+  {name:'ミッキー・ディー',part:'Dr'},
+  {name:'ビフ・バイフォード',part:'Vo'},
+  {name:'ポール・クィン',part:'Gt'},
+  {name:'グラハム・オリヴァー',part:'Gt'},
+  {name:'スティーヴ・ドーソン',part:'Ba'},
+  {name:'ウド・ダークシュナイダー',part:'Vo'},
+  {name:'ウルフ・ホフマン',part:'Gt'},
+  {name:'ヨルグ・フィッシャー',part:'Gt'},
+  {name:'ピーター・バルテス',part:'Ba'},
+  {name:'ステファン・カウフマン',part:'Dr'},
+  {name:'デヴィッド・カヴァデール',part:'Vo'},
+  {name:'ジョン・サイクス',part:'Gt'},
+  {name:'エイドリアン・ヴァンデンバーグ',part:'Gt'},
+  {name:'ミッキー・ムーディ',part:'Gt'},
+  {name:'バーニー・マースデン',part:'Gt'},
+  {name:'ニール・マレイ',part:'Ba'},
+  {name:'ジョー・エリオット',part:'Vo'},
+  {name:'フィル・コリン',part:'Gt'},
+  {name:'スティーヴ・クラーク',part:'Gt'},
+  {name:'リック・サヴェージ',part:'Ba'},
+  {name:'リック・アレン',part:'Dr'},
+  {name:'ピート・ウィリス',part:'Gt'},
+  {name:'アンガス・ヤング',part:'Gt'},
+  {name:'マルコム・ヤング',part:'Gt'},
+  {name:'ブライアン・ジョンソン',part:'Vo'},
+  {name:'クルフ・ウィリアムズ',part:'Ba'},
+  {name:'フィル・ラッド',part:'Dr'},
+  {name:'クラウス・マイネ',part:'Vo'},
+  {name:'ルドルフ・シェンカー',part:'Gt'},
+  {name:'マティアス・ヤプス',part:'Gt'},
+  {name:'フランシス・ブッフホルツ',part:'Ba'},
+  {name:'ハーマン・ラアベル',part:'Dr'},
+  {name:'キング・ダイヤモンド',part:'Vo'},
+  {name:'ハンク・シャーマン',part:'Gt'},
+  {name:'マイケル・デナー',part:'Gt'},
+  {name:'ティミ・ハンセン',part:'Ba'},
+  {name:'キム・ラズ',part:'Dr'},
+  {name:'ロルフ・カスパレク',part:'Vo/Gt'},
+  {name:'マイド・「ストーニィ」・モーガン',part:'Gt'},
+  {name:'ブライアン・タトラー',part:'Gt'},
+  {name:'ショーン・ハリス',part:'Vo'},
+  {name:'ジョン・ギャラガー',part:'Vo/Ba'},
+  {name:'マークギャラガー',part:'Gt'},
+  {name:'ロブ・「ワッコ」・ハンター',part:'Dr'},
+  {name:'クリス・タンガリーディス',part:'Gt'},
+  {name:'ロックン・ロルフ',part:'Gt'},
+  {name:'ペーター・テグトレン',part:'Vo/Gt'},
+  {name:'マット・シナー',part:'Vo/Ba'},
+  {name:'トム・ナウマン',part:'Gt'},
+  {name:'ラルフ・シーパース',part:'Vo'},
+  {name:'スニ・レフ',part:'Gt'},
+  {name:'ジョン・トーマス',part:'Gt'},
+  {name:'バーク・シェリー',part:'Vo/Ba'},
+  {name:'ゲイリー・ムーア',part:'Vo/Gt'},
+  {name:'ニール・カーター',part:'Gt'},
+  {name:'クリス・グレン',part:'Ba'},
+  {name:'コージー・パウエル',part:'Dr'},
+  {name:'マイケル・シェンカー',part:'Gt'},
+  {name:'ゲイリー・バーデン',part:'Vo'},
+  {name:'グラハム・ボネット',part:'Vo'},
+  {name:'クリーヴ・エドワーズ',part:'Ba'},
+  {name:'フィル・モグ',part:'Vo'},
+  {name:'ポール・レイモンド',part:'Gt'},
+  {name:'アンディ・パーカー',part:'Dr'},
+  {name:'クリス・ボルトンダール',part:'Vo'},
+  {name:'ウーヴェ・ルゥ',part:'Gt'},
+  {name:'ハリー・ウィルケンス',part:'Gt'},
+  {name:'イェンス・ベッカー',part:'Ba'},
+  {name:'ステファン・アルノルト',part:'Dr'},
+  {name:'ウォルター・ピータース',part:'Gt'},
+  {name:'スラッシュメタル',part:'Vo/Gt'},
+  {name:'カーク・ハメット',part:'Gt'},
+  {name:'ラーズ・ウルリッヒ',part:'Dr'},
+  {name:'クリフ・バートン',part:'Ba'},
+  {name:'ジェイソン・ニューステッド',part:'Ba'},
+  {name:'ロバート・トゥルージロ',part:'Ba'},
+  {name:'トム・アラヤ',part:'Vo/Ba'},
+  {name:'ケリー・キング',part:'Gt'},
+  {name:'ジェフ・ハンネマン',part:'Gt'},
+  {name:'デイヴ・ロンバード',part:'Dr'},
+  {name:'ポール・ボスタフ',part:'Dr'},
+  {name:'ガリー・ホルト',part:'Gt'},
+  {name:'デイヴ・ムステイン',part:'Vo/Gt'},
+  {name:'マーティ・フリードマン',part:'Gt'},
+  {name:'デイヴィッド・エレフソン',part:'Ba'},
+  {name:'ニック・メンザ',part:'Dr'},
+  {name:'クリス・ポーランド',part:'Gt'},
+  {name:'ガル・サミュエルソン',part:'Dr'},
+  {name:'スコット・イアン',part:'Gt'},
+  {name:'ジョーイ・ベラドナ',part:'Vo'},
+  {name:'チャーリー・ベナンテ',part:'Dr'},
+  {name:'フランク・ベロ',part:'Ba'},
+  {name:'ダン・スピッツ',part:'Gt'},
+  {name:'ジョン・ブッシュ',part:'Vo'},
+  {name:'チャック・ビリー',part:'Vo'},
+  {name:'エリック・ピーターソン',part:'Gt'},
+  {name:'アレックス・スコルニック',part:'Gt'},
+  {name:'グレッグ・クリスチャン',part:'Ba'},
+  {name:'ルイ・クレメンテ',part:'Dr'},
+  {name:'ボビー・“ブリッツ”・エルツ',part:'Vo'},
+  {name:'D.D.ヴァーニ',part:'Ba'},
+  {name:'ボビー・ガスタフソン',part:'Gt'},
+  {name:'タイム・マレアー',part:'Dr'},
+  {name:'ミレ・ペトロッツァ',part:'Vo/Gt'},
+  {name:'ユルゲン・“ヴェンター”・ライル',part:'Dr'},
+  {name:'クリスチャン・“ギースラー”・ギースラー',part:'Ba'},
+  {name:'サミ・ウリ・シニオ',part:'Gt'},
+  {name:'トム・エンジェルリッパー',part:'Vo/Ba'},
+  {name:'クリス・ウィッチハンター',part:'Dr'},
+  {name:'フランク・ブラックファイア',part:'Gt'},
+  {name:'シュミーア',part:'Vo/Ba'},
+  {name:'マイク・シフリンガー',part:'Gt'},
+  {name:'トミー・サンドマン',part:'Dr'},
+  {name:'マックス・カヴァレラ',part:'Vo/Gt'},
+  {name:'アンドレアス・キッサー',part:'Gt'},
+  {name:'イゴール・カヴァレラ',part:'Dr'},
+  {name:'パウロJr.',part:'Ba'},
+  {name:'マーク・オセグエダ',part:'Vo'},
+  {name:'ロブ・カヴェスタニ',part:'Gt'},
+  {name:'デニス・ペパ',part:'Ba'},
+  {name:'アンディ・ゲイルオン',part:'Dr'},
+  {name:'ガス・ペパ',part:'Gt'},
+  {name:'ジェフ・ウォーターズ',part:'Gt'},
+  {name:'ランディ・ランプマン',part:'Vo'},
+  {name:'ジーン・ホグラン',part:'Dr'},
+  {name:'ロン・リンホーン',part:'Vo'},
+  {name:'エリック・メイヤー',part:'Gt'},
+  {name:'ジム・ドゥルキン',part:'Gt'},
+  {name:'スティーヴ・“Zetro”・スタウザ',part:'Vo'},
+  {name:'ポール・バロフ',part:'Vo'},
+  {name:'トム・ハンティング',part:'Dr'},
+  {name:'ジャック・ギブソン',part:'Ba'},
+  {name:'リック・ハノルト',part:'Gt'},
+  {name:'ジョン・コノリー',part:'Vo/Gt'},
+  {name:'トミー・ヴィクター',part:'Vo/Gt'},
+  {name:'テド・パーソンズ',part:'Dr'},
+  {name:'ロッキー・ジョージ',part:'Gt'},
+  {name:'マイク・ミューア',part:'Vo'},
+  {name:'ロバート・クラーク',part:'Vo'},
+  {name:'フレイザー・クラーク',part:'Gt'},
+  {name:'ジョン・リジー',part:'Gt'},
+  {name:'フィリップ・エグゼ',part:'Vo/Gt'},
+  {name:'デイヴ・カルロ',part:'Gt'},
+  {name:'ステーヴ・クドロウ',part:'Vo/Gt'},
+  {name:'ロブ・ライナー',part:'Dr'},
+  {name:'クリス・アスト',part:'Ba'},
+  {name:'ケリー・シェイファー',part:'Vo/Gt'},
+  {name:'ランド・バーキー',part:'Gt'},
+  {name:'トニー・チョイ',part:'Ba'},
+  {name:'スティーヴ・フリン',part:'Dr'},
+  {name:'チャック・シュルディナー',part:'Vo/Gt'},
+  {name:'クリス・ライファート',part:'Vo'},
+  {name:'リック・ロズ',part:'Gt'},
+  {name:'ジェームズ・マーフィ',part:'Gt'},
+  {name:'ジョン・タルディ',part:'Vo'},
+  {name:'ドナルド・タルディ',part:'Dr'},
+  {name:'トレヴァー・ペレス',part:'Gt'},
+  {name:'グレン・ベントン',part:'Vo/Ba'},
+  {name:'エリック・ホフマン',part:'Gt'},
+  {name:'ブライアン・ホフマン',part:'Gt'},
+  {name:'スティーヴ・アシェイム',part:'Dr'},
+  {name:'デイヴィッド・ヴィンセント',part:'Vo/Ba'},
+  {name:'ピート・サンドヴァル',part:'Dr'},
+  {name:'リチャード・ブルーネル',part:'Gt'},
+  {name:'ジェフ・ベセーラ',part:'Vo/Ba'},
+  {name:'マイク・トラーオ',part:'Gt'},
+  {name:'ラリー・ラロンド',part:'Gt'},
+  {name:'スコット・ララネ',part:'Dr'},
+  {name:'ジョン・ネクヴェ',part:'Vo/Gt'},
+  {name:'オルヴァ・トシュ',part:'Ba'},
+  {name:'クリス・コーネル',part:'Vo/Gt'},
+  {name:'キム・セイル',part:'Gt'},
+  {name:'ベン・シェパード',part:'Ba'},
+  {name:'マット・キャメロン',part:'Dr'},
+  {name:'ヒロ・ヤマモト',part:'Ba'},
+  {name:'カート・コバーン',part:'Vo/Gt'},
+  {name:'クリスト・ノヴォセリック',part:'Ba'},
+  {name:'デイヴ・グロール',part:'Dr'},
+  {name:'チャド・チャニング',part:'Dr'},
+  {name:'レイン・ステイリー',part:'Vo'},
+  {name:'ジェリー・カントレル',part:'Vo/Gt'},
+  {name:'マイク・スター',part:'Ba'},
+  {name:'ショーン・キニー',part:'Dr'},
+  {name:'マイク・アイネズ',part:'Ba'},
+  {name:'エディ・ヴェダー',part:'Vo'},
+  {name:'マイク・マクレディ',part:'Gt'},
+  {name:'ストーン・ゴッサード',part:'Gt'},
+  {name:'ジェフ・アメン',part:'Ba'},
+  {name:'デイヴ・クルーセン',part:'Dr'},
+  {name:'マーク・アーム',part:'Vo/Gt'},
+  {name:'スティーヴ・ターナー',part:'Gt'},
+  {name:'マット・ルーキン',part:'Ba'},
+  {name:'ダン・ピーターズ',part:'Dr'},
+  {name:'スコット・ウェイランド',part:'Vo'},
+  {name:'ディーン・ディレオ',part:'Gt'},
+  {name:'ロバート・ディレオ',part:'Ba'},
+  {name:'エリック・クレッツ',part:'Dr'},
+  {name:'ビリー・コーガン',part:'Vo/Gt'},
+  {name:'ジェームス・イハ',part:'Gt'},
+  {name:'ダルシー・レツキー',part:'Ba'},
+  {name:'ジミー・チェンバレン',part:'Dr'},
+  {name:'バズ・オズボーン',part:'Vo/Gt'},
+  {name:'デイル・クローヴァー',part:'Dr'},
+  {name:'マーク・デュトニ',part:'Ba'},
+  {name:'アンドリュー・ウッド',part:'Vo'},
+  {name:'ブルース・フェアウェザー',part:'Gt'},
+  {name:'グレッグ・ギルモア',part:'Dr'},
+  {name:'マーク・ラネガン',part:'Vo'},
+  {name:'ゲイリー・リー・コナー',part:'Gt'},
+  {name:'ヴァン・コナー',part:'Ba'},
+  {name:'バレット・マーティ',part:'Dr'},
+  {name:'タッド・ドイル',part:'Vo/Gt'},
+  {name:'カート・ダニエルソン',part:'Ba'},
+  {name:'ギャヴィン・ロスデイル',part:'Vo/Gt'},
+  {name:'ナイジェル・パルズフォード',part:'Gt'},
+  {name:'デイヴ・パーソンズ',part:'Ba'},
+  {name:'ロビン・グッドリッジ',part:'Dr'},
+  {name:'ダニエル・ジョンズ',part:'Vo/Gt'},
+  {name:'ベン・ギリーズ',part:'Dr'},
+  {name:'クリス・ジョアンナ',part:'Ba'},
+  {name:'カトリーナ・フォード',part:'Vo'},
+  {name:'スキン',part:'Vo'},
+  {name:'エース',part:'Gt'},
+  {name:'カス',part:'Ba'},
+  {name:'マーク・リチャードソン',part:'Dr'},
+  {name:'シャリー・ハットソン',part:'Gt'},
+  {name:'ドニータ・スパークス',part:'Vo/Gt'},
+  {name:'スージー・ガードナー',part:'Vo/Gt'},
+  {name:'ジェニファー・フィンチ',part:'Ba'},
+  {name:'ディー・プラカス',part:'Dr'},
+  {name:'コートニー・ラブ',part:'Vo/Gt'},
+  {name:'エリック・エルランドソン',part:'Gt'},
+  {name:'メリッサ・オフ・ダ・マー',part:'Ba'},
+  {name:'パティ・シェメル',part:'Dr'},
+  {name:'キャット・ビェランド',part:'Vo/Gt'},
+  {name:'ローリ・バーベロ',part:'Dr'},
+  {name:'モーリーン・ハーマン',part:'Ba'},
+  {name:'ブロディ・ダール',part:'Vo/Gt'},
+  {name:'トニー・ブラッドリー',part:'Gt'},
+  {name:'ライアン・シネット',part:'Ba'},
+  {name:'アンディ・グラナダ',part:'Dr'},
+  {name:'ページ・ハミルトン',part:'Vo/Gt'},
+  {name:'ピーター・メンゲデ',part:'Gt'},
+  {name:'ヘンリー・ボグダン',part:'Ba'},
+  {name:'ジョン・スタニエ',part:'Dr'},
+  {name:'ジョン・ガルシア',part:'Vo'},
+  {name:'ジョシュ・オム',part:'Gt'},
+  {name:'スコット・リーダー',part:'Ba'},
+  {name:'ブラント・ビョーク',part:'Dr'},
+  {name:'ニック・オリヴェリ',part:'Ba'},
+  {name:'アル・ジョルゲンセン',part:'Vo/Gt'},
+  {name:'マイク・スカッチャ',part:'Gt'},
+  {name:'ポール・バーカー',part:'Ba'},
+  {name:'ビル・リーフリン',part:'Dr'},
+  {name:'ジェームズ・ウール',part:'Dr'},
+  {name:'トミー・プラザ',part:'Gt'},
+  {name:'バズ・マーク',part:'Dr'},
+  {name:'ジャスティン・ブロードリック',part:'Vo/Gt'},
+  {name:'G.C.グリーン',part:'Ba'},
+  {name:'シャノン・フーン',part:'Vo'},
+  {name:'ロジャース・スティーヴンス',part:'Gt'},
+  {name:'クリストファー・ソーン',part:'Gt'},
+  {name:'ブラッド・スミス',part:'Ba'},
+  {name:'グレン・グレアム',part:'Dr'},
+  {name:'ペッパー・キーナン',part:'Vo/Gt'},
+  {name:'ウディ・ウェザマン',part:'Gt'},
+  {name:'マイク・ディーン',part:'Ba'},
+  {name:'リー・ムリンズ',part:'Dr'},
+  {name:'リーズ・テイラー',part:'Ba'},
+  {name:'ジョン・ボン・ジョヴィ',part:'Vo'},
+  {name:'リッチー・サンボラ',part:'Gt'},
+  {name:'アレック・ジョン・サッチ',part:'Ba'},
+  {name:'ティコ・トーレス',part:'Dr'},
+  {name:'アクセル・ローズ',part:'Vo'},
+  {name:'スラッシュ',part:'Gt'},
+  {name:'ダフ・マッケイガン',part:'Ba'},
+  {name:'イジー・ストラドリン',part:'Gt'},
+  {name:'スティーヴン・アドラー',part:'Dr'},
+  {name:'セバスチャン・バック',part:'Vo'},
+  {name:'デイヴ・“ザ・スネイク”・セイボ',part:'Gt'},
+  {name:'スコッティ・ヒル',part:'Gt'},
+  {name:'レイチェル・ボラン',part:'Ba'},
+  {name:'ロブ・アッフューソ',part:'Dr'},
+  {name:'スティーヴ・ヴァイ',part:'Gt'},
+  {name:'デヴィッド・リー・ロス',part:'Vo'},
+  {name:'グレッグ・ビソネット',part:'Dr'},
+  {name:'ビリー・シーン',part:'Ba'},
+  {name:'エリック・マーティン',part:'Vo'},
+  {name:'ポール・ギルバート',part:'Gt'},
+  {name:'パット・トーピー',part:'Dr'},
+  {name:'ヌーノ・ベッテンコート',part:'Gt'},
+  {name:'ゲイリー・シェローン',part:'Vo'},
+  {name:'パット・バッジャー',part:'Ba'},
+  {name:'ポール・ギアリ',part:'Dr'},
+  {name:'サミー・ヘイガー',part:'Vo'},
+  {name:'エディ・ヴァン・ヘイレン',part:'Gt'},
+  {name:'アレックス・ヴァン・ヘイレン',part:'Dr'},
+  {name:'マイケル・アンソニー',part:'Ba'},
+  {name:'スティーヴ・リー',part:'Vo'},
+  {name:'レオ・レオーニ',part:'Gt'},
+  {name:'マルク・リン',part:'Ba'},
+  {name:'ヘナ・ハーベッガー',part:'Dr'},
+  {name:'カイ・ハンセン',part:'Vo/Gt'},
+  {name:'マイケル・キスケ',part:'Vo'},
+  {name:'アンディ・デリス',part:'Vo'},
+  {name:'マイケル・ヴァイカート',part:'Gt'},
+  {name:'マーカス・グロスコフ',part:'Ba'},
+  {name:'インゴ・シュヴィヒテンバーグ',part:'Dr'},
+  {name:'ウリ・カッシュ',part:'Dr'},
+  {name:'サシャ・ゲルストナー',part:'Gt'},
+  {name:'ハンズィ・キアシュ',part:'Vo/Ba'},
+  {name:'アンドレ・オルブリヒ',part:'Gt'},
+  {name:'マーカス・ジーペン',part:'Gt'},
+  {name:'トーマス・スタウチ',part:'Dr'},
+  {name:'ティモ・トルキ',part:'Gt'},
+  {name:'ティモ・コティペルト',part:'Vo'},
+  {name:'ヤリ・カイヌライネン',part:'Ba'},
+  {name:'ヨルグ・マイケル',part:'Dr'},
+  {name:'トビアス・サメット',part:'Vo/Ba'},
+  {name:'イェンス・ルートヴィヒ',part:'Gt'},
+  {name:'ディルク・ザウアー',part:'Gt'},
+  {name:'トビアス・エクセル',part:'Ba'},
+  {name:'フェリックス・ボーンケ',part:'Dr'},
+  {name:'キコ・ルーレイロ',part:'Gt'},
+  {name:'アンドレ・マトス',part:'Vo'},
+  {name:'ラファエル・ビッテンコート',part:'Gt'},
+  {name:'ルイス・マリウッティ',part:'Ba'},
+  {name:'リカルド・コンフェッソーリ',part:'Dr'},
+  {name:'エドゥ・ファラスキ',part:'Vo'},
+  {name:'アキレス・プリースター',part:'Dr'},
+  {name:'ルカ・トゥリッリ',part:'Gt'},
+  {name:'ファビオ・リオーネ',part:'Vo'},
+  {name:'アレサンドロ・ロッタ',part:'Ba'},
+  {name:'ダニエレ・カルボネーラ',part:'Dr'},
+  {name:'トルビョーン・エングルンド',part:'Gt'},
+  {name:'ヨアキム・ブロデン',part:'Vo'},
+  {name:'パリック・ヨハンソン',part:'Gt'},
+  {name:'サム・トットマン',part:'Gt'},
+  {name:'ハーマン・リ',part:'Gt'},
+  {name:'ZP・サート',part:'Vo'},
+  {name:'ディック・コンザ',part:'Ba'},
+  {name:'デイヴ・マッキントッシュ',part:'Dr'},
+  {name:'クリス・インペリテリ',part:'Gt'},
+  {name:'ロブ・ロック',part:'Vo'},
+  {name:'ジェームズ・アミelio',part:'Ba'},
+  {name:'ケネス・マリ',part:'Dr'},
+  {name:'トーマス・ヤングブラッド',part:'Gt'},
+  {name:'ロイ・カーン',part:'Vo'},
+  {name:'グレン・バリー',part:'Ba'},
+  {name:'ケイシー・グリロ',part:'Dr'},
+  {name:'トニー・カッコ',part:'Vo'},
+  {name:'ヤニ・リーマタイネン',part:'Gt'},
+  {name:'マルコ・パシコスキー',part:'Ba'},
+  {name:'トミー・ポルティモ',part:'Dr'},
+  {name:'ヘンカ・クリング',part:'Gt'},
+  {name:'ディルク・シュレヒター',part:'Ba'},
+  {name:'ヘンヨ・リヒター',part:'Gt'},
+  {name:'ダニエル・ツィマーマン',part:'Dr'},
+  {name:'トーマス・レトケ',part:'Vo'},
+  {name:'ボンニィ・ビル',part:'Gt'},
+  {name:'サシャ・ピート',part:'Gt'},
+  {name:'ローニー・ミルカノヴィッチ',part:'Gt'},
+  {name:'スティーン・モーゲンセン',part:'Ba'},
+  {name:'ヨアキム・ルンドベリ',part:'Ba'},
+  {name:'クリス・カフェリー',part:'Gt'},
+  {name:'ジョン・オリヴァ',part:'Vo'},
+  {name:'クリス・オリヴァ',part:'Gt'},
+  {name:'ジョニー・リー・ミドルトン',part:'Ba'},
+  {name:'イングヴェイ・マルムスティーン',part:'Gt'},
+  {name:'マーセル・ヤコブ',part:'Ba'},
+  {name:'ジェフ・スコット・ソート',part:'Vo'},
+  {name:'アンディ・マロウ',part:'Dr'},
+  {name:'ジェイムズ・ラブリエ',part:'Vo'},
+  {name:'ジョン・ペトルーシ',part:'Gt'},
+  {name:'マイク・ポートノイ',part:'Dr'},
+  {name:'ジョンマイアング',part:'Ba'},
+  {name:'クリス・デガーモ',part:'Gt'},
+  {name:'ジェフ・テイト',part:'Vo'},
+  {name:'マイケル・ウィルトン',part:'Gt'},
+  {name:'エディ・ジャクソン',part:'Ba'},
+  {name:'スコット・ロッケンフィールド',part:'Dr'},
+  {name:'マイケル・ロメオ',part:'Gt'},
+  {name:'ラッセル・アレン',part:'Vo'},
+  {name:'マイケル・レポンド',part:'Ba'},
+  {name:'ジェイソン・ルロ',part:'Dr'},
+  {name:'ジム・マテオス',part:'Gt'},
+  {name:'ジョン・アーチ',part:'Vo'},
+  {name:'レイ・アルダー',part:'Vo'},
+  {name:'スティーヴ・ディジョルジオ',part:'Ba'},
+  {name:'トニー・マカパイン',part:'Gt'},
+  {name:'ロルフ・ピルヴ',part:'Dr'},
+  {name:'ミカエル・オーカーフェルト',part:'Vo/Gt'},
+  {name:'ピーター・リンドグレン',part:'Gt'},
+  {name:'マルティン・メンデス',part:'Ba'},
+  {name:'マルティン・ロペス',part:'Dr'},
+  {name:'ポール・マスヴィダル',part:'Vo/Gt'},
+  {name:'ショーン・ライナート',part:'Dr'},
+  {name:'トレイ・アザトース',part:'Gt'},
+  {name:'フィリップ・アンセルモ',part:'Vo'},
+  {name:'ダイムバッグ・ダレル',part:'Gt'},
+  {name:'ヴィニー・ポール',part:'Dr'},
+  {name:'レックス・ブラウン',part:'Ba'},
+  {name:'コリィ・テイラー',part:'Vo'},
+  {name:'ミック・トムソン',part:'Gt'},
+  {name:'ジム・ルート',part:'Gt'},
+  {name:'ジョーイ・ジョーディソン',part:'Dr'},
+  {name:'ポール・グレイ',part:'Ba'},
+  {name:'クリス・フェーン',part:'Gt'},
+  {name:'ショーン・クラハン',part:'Gt'},
+  {name:'ジョナサン・デイヴィス',part:'Vo'},
+  {name:'ブライアン・“ヘッド”・ウェルチ',part:'Gt'},
+  {name:'ジェームズ・“マンキー”・シャッファー',part:'Gt'},
+  {name:'レジナルド・“フィールディ”・アーヴィズ',part:'Ba'},
+  {name:'デヴィッド・シルヴェリア',part:'Dr'},
+  {name:'チェスター・ベニントン',part:'Vo'},
+  {name:'マイク・シノダ',part:'Vo/Gt'},
+  {name:'ブラッド・デルソン',part:'Gt'},
+  {name:'フェニックス',part:'Ba'},
+  {name:'ロブ・バードン',part:'Dr'},
+  {name:'フレッド・ダースト',part:'Vo'},
+  {name:'ウェス・ボーランド',part:'Gt'},
+  {name:'サム・リヴァース',part:'Ba'},
+  {name:'ジョン・オット',part:'Dr'},
+  {name:'チノ・モレノ',part:'Vo/Gt'},
+  {name:'ステファン・カーペンター',part:'Gt'},
+  {name:'チ・チェン',part:'Ba'},
+  {name:'エイブ・カニンガム',part:'Dr'},
+  {name:'ザック・デ・ラ・ロッチャ',part:'Vo'},
+  {name:'トム・モレロ',part:'Gt'},
+  {name:'ティム・コマーフォード',part:'Ba'},
+  {name:'ブラッド・ウィルク',part:'Dr'},
+  {name:'サージ・タンキアン',part:'Vo'},
+  {name:'ダロン・マラキアン',part:'Vo/Gt'},
+  {name:'シャヴォ・オダジアン',part:'Ba'},
+  {name:'ジョン・ドルマヤン',part:'Dr'},
+  {name:'メイナード・ジェームズ・キーナン',part:'Vo'},
+  {name:'アダム・ジョーンズ',part:'Gt'},
+  {name:'ジャスティン・チャンセラー',part:'Ba'},
+  {name:'ダニー・ケアリー',part:'Dr'},
+  {name:'ポール・ダムール',part:'Ba'},
+  {name:'デイヴィッド・ドレイマン',part:'Vo'},
+  {name:'ダン・ドネガン',part:'Gt'},
+  {name:'ジョン・モイヤー',part:'Ba'},
+  {name:'マイク・ウェングレン',part:'Dr'},
+  {name:'ロブ・ゾンビ',part:'Vo'},
+  {name:'ジェイ・ユエンガー',part:'Gt'},
+  {name:'ショーン・イソル',part:'Ba'},
+  {name:'マリリン・マンソン',part:'Vo'},
+  {name:'トゥイギー・ラミレズ',part:'Gt'},
+  {name:'ジョン5',part:'Gt'},
+  {name:'ジンジャー・フィッシュ',part:'Dr'},
+  {name:'ロブ・フリン',part:'Vo/Gt'},
+  {name:'フィル・デンメル',part:'Gt'},
+  {name:'アダム・デュース',part:'Ba'},
+  {name:'デイヴ・マクレイン',part:'Dr'},
+  {name:'ランディ・ブライス',part:'Vo'},
+  {name:'マーク・モートン',part:'Gt'},
+  {name:'ウィリー・アドラー',part:'Gt'},
+  {name:'ジョン・キャンベル',part:'Ba'},
+  {name:'クリス・アドラー',part:'Dr'},
+  {name:'アレキシ・ライホ',part:'Vo/Gt'},
+  {name:'ダニエル・フレイベリ',part:'Gt'},
+  {name:'ヘンカ・ブラックスミス',part:'Ba'},
+  {name:'ヤスカ・ラーチカイネン',part:'Dr'},
+  {name:'イェスパー・ストロムブラード',part:'Gt'},
+  {name:'アンジェラ・ゴソウ',part:'Vo'},
+  {name:'マイケル・アモット',part:'Gt'},
+  {name:'クリストファー・アモット',part:'Gt'},
 ];
-// 女性キャラは引き続き従来通り
-const NAMES_F=[
-  'ブルマ','チチ','ビーデル','18号','ランチ',
-  'ぼたん','雪菜','螢子','美樹',
-  'アテナ','シャイナ','エリス',
-  'ラム','天道あかね','シャンプー','九能小太刀',
-  '槇村香','美樹','レイラ',
-  'ユリア','マミヤ','リン',
-  '赤木晴子','彩子',
-  'サクラ','ヒナ','レイ','アオイ','カナ','ミツキ',
-];
+
+// パート別インデックス
+const ML_BY_PART = {};
+['Vo','Gt','Ba','Dr','Vo/Gt','Vo/Ba'].forEach(p=>{
+  ML_BY_PART[p] = MUSICIAN_LIST.filter(m=>m.part===p);
+});
+// 全員（Vo/GtはVoとGt両方に含める）
+ML_BY_PART['Vo_ALL'] = MUSICIAN_LIST.filter(m=>m.part==='Vo'||m.part==='Vo/Gt'||m.part==='Vo/Ba');
+ML_BY_PART['Gt_ALL'] = MUSICIAN_LIST.filter(m=>m.part==='Gt'||m.part==='Vo/Gt');
+ML_BY_PART['Ba_ALL'] = MUSICIAN_LIST.filter(m=>m.part==='Ba'||m.part==='Vo/Ba');
+ML_BY_PART['Dr_ALL'] = MUSICIAN_LIST.filter(m=>m.part==='Dr');
+
 
 // ===== STATE =====
 let party=[],selP1=-1,restCnt=COOLDOWN_WIN,restRequired=COOLDOWN_WIN,battleCnt=0,bandName='';
@@ -576,15 +1152,23 @@ function calcStats(code,isP2){
   if(isP2){isFemale=(parseInt(d.slice(-1))%5===0);if(isFemale){name=NAMES_F[parseInt(d.slice(-3))%NAMES_F.length];icon=ICONS_F[parseInt(d.slice(-4))%ICONS_F.length];}else{name=NAMES_M[parseInt(d.slice(-3))%NAMES_M.length];icon=ICONS_M[parseInt(d.slice(-4))%ICONS_M.length];}if(isBoss)name='[BOSS]'+name;}
   else{name=heroName||'ヒーロー';const wtIdx=parseInt(d.slice(-4))%WARRIOR_TYPES.length;icon=WARRIOR_TYPES[wtIdx].icon+'️';}
   const special=calcSpecial(d);
-  // ポジション決定（バーコードの数字から）
-  const posIdx=parseInt(d.slice(-2))%4;
-  const position=POSITIONS[posIdx];
-  const pb=POS_BONUS[position];
+  // ミュージシャンリストから選出
+  const mlIdx = parseInt(d.slice(-3)) % MUSICIAN_LIST.length;
+  const musician = MUSICIAN_LIST[mlIdx];
+  name = musician.name;
+  // Vo/Gt と Vo/Ba の処理
+  let rawPart = musician.part;
+  let position;
+  if(rawPart==='Vo/Gt') position = (parseInt(d.slice(-1))%2===0) ? 'Vo' : 'Gt';
+  else if(rawPart==='Vo/Ba') position = (parseInt(d.slice(-1))%2===0) ? 'Vo' : 'Ba';
+  else position = rawPart;
+  icon = PART_ICONS[position] || '🎸';
+  const pb = POS_BONUS[position] || {hp:0,at:0,df:0};
   hp+=pb.hp; at+=pb.at; df+=pb.df;
   // ジャンル決定
-  const genreIdx=parseInt(d.slice(-3))%GENRES.length;
+  const genreIdx=parseInt(d.slice(-4))%GENRES.length;
   const genre=GENRES[genreIdx];
-  return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale,position,genre,lev:1,exp:0,code:d,special,isBoss};
+  return{hp,maxHp:hp,at,df,rarity,name,icon,isFemale:false,position,genre,lev:1,exp:0,code:d,special,isBoss,battleCount:0};
 }
 
 // ===== SCREEN =====
@@ -708,7 +1292,11 @@ function renderParty(){
   if(bbEl){
     const bonuses=calcBandBonus();
     if(bonuses&&bonuses.length>0){
-      bbEl.innerHTML=bonuses.map(b=>`<div style="font-size:10px;color:var(--gold);background:rgba(100,80,0,0.2);border:1px solid #664400;border-radius:5px;padding:5px 8px;margin-bottom:4px;">🎸 ${b.label}：AT+${b.at} DF+${b.df}</div>`).join('');
+      bbEl.innerHTML=bonuses.map(b=>{
+        const desc=b.type==='pct'?`AT/DF+${b.pct}%`:`AT+${b.at} DF+${b.df}`;
+        const used=usedBonuses.has(b.key)?'<span style="color:#888;font-size:8px;">（発動済）</span>':'<span style="color:#44ff44;font-size:8px;">★未発動</span>';
+        return `<div style="font-size:10px;color:var(--gold);background:rgba(100,80,0,0.2);border:1px solid #664400;border-radius:5px;padding:5px 8px;margin-bottom:4px;">🎸 ${b.label}：${desc} ${used}</div>`;
+      }).join('');
     } else if(party.length===MAX_PARTY){
       bbEl.innerHTML='<div style="font-size:9px;color:var(--dim);text-align:center;">同ジャンルで揃えるとバンドボーナス発動！</div>';
     } else {
@@ -944,11 +1532,12 @@ async function executeBattle(){
   const push=(text,color)=>{const s=document.createElement('span');s.textContent=text+'\n';if(color)s.style.color=color;log.appendChild(s);log.scrollTop=log.scrollHeight;};
   const curW=party[currentFighterIdx];
   const p1={...curW};
-  // バンドボーナス適用
+  // バンドボーナス適用（1回限り）
   const bandBonuses=calcBandBonus();
   if(bandBonuses){
-    bandBonuses.forEach(b=>{p1.at+=b.at;p1.df+=b.df;});
-    push(`🎸 バンドボーナス発動！AT+${bandBonuses.reduce((s,b)=>s+b.at,0)} DF+${bandBonuses.reduce((s,b)=>s+b.df,0)}`,'var(--gold)');
+    applyAndMarkBonuses(bandBonuses,p1);
+    const desc=bandBonuses.map(b=>b.type==='pct'?`${b.label}(AT/DF+${b.pct}%)`:`${b.label}(AT+${b.at}/DF+${b.df})`).join(' / ');
+    push(`🎸 ${desc}`,'var(--gold)');
     await sleep(400);
   }
   const p1Max=p1.hp;
@@ -1039,22 +1628,111 @@ function selectNextFighter(idx){
 function defeatGiveUp(){closeModal('modal-defeat');resetBattle();}
 function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 
-// バンドボーナス計算
+// バンドボーナス計算（1種類1回限り）
+const usedBonuses=new Set(); // 発動済みボーナス
+
 function calcBandBonus(){
   if(party.length<MAX_PARTY) return null;
   const positions=party.map(w=>w.position||'');
-  const hasAll=['Vo','Gt','Ba','Dr'].every(p=>positions.includes(p));
+  const bonuses=[];
+
+  // ① Vo(or Vo/Gt)+Gt+Ba+Dr 全員揃い → AT/DF+30%
+  const hasVo=positions.some(p=>p==='Vo'||p==='Vo/Gt');
+  const hasGt=positions.some(p=>p==='Gt'||p==='Vo/Gt');
+  const hasBa=positions.some(p=>p==='Ba'||p==='Vo/Ba');
+  const hasDr=positions.includes('Dr');
+  if(hasVo&&hasGt&&hasBa&&hasDr&&!usedBonuses.has('full')){
+    bonuses.push({key:'full',label:'完全編成ボーナス',type:'pct',pct:30});
+  }
+
+  // ② 同ジャンル4人揃い（1回限り）
   const genres=party.map(w=>w.genre||'');
   const genreCount={};
   genres.forEach(g=>{genreCount[g]=(genreCount[g]||0)+1;});
-  const sameGenre=Object.values(genreCount).some(c=>c>=4);
-  const bonuses=[];
-  if(hasAll) bonuses.push({label:'全員集合ボーナス',at:FULL_BAND_BONUS,df:FULL_BAND_BONUS});
-  if(sameGenre){
-    const g=Object.keys(genreCount).find(k=>genreCount[k]>=4);
-    bonuses.push({label:`${g}統一ボーナス`,at:GENRE_BONUS,df:GENRE_BONUS});
+  const fullGenre=Object.keys(genreCount).find(k=>genreCount[k]>=MAX_PARTY&&!usedBonuses.has('genre_'+k));
+  if(fullGenre){
+    bonuses.push({key:'genre_'+fullGenre,label:`${fullGenre}統一ボーナス`,type:'flat',at:GENRE_BONUS,df:GENRE_BONUS});
   }
+
   return bonuses.length>0?bonuses:null;
+}
+
+function applyAndMarkBonuses(bonuses,p1){
+  bonuses.forEach(b=>{
+    usedBonuses.add(b.key);
+    if(b.type==='pct'){
+      p1.at=Math.round(p1.at*(1+b.pct/100));
+      p1.df=Math.round(p1.df*(1+b.pct/100));
+    } else {
+      p1.at+=b.at; p1.df+=b.df;
+    }
+  });
+}
+
+// 脱退要求チェック（7回バトルで脱退要求）
+const LEAVE_BATTLE_COUNT = 7;
+let pendingLeaveIdx = -1; // 脱退要求中のメンバーインデックス
+
+function checkLeaveRequest(){
+  // 既に脱退要求中なら何もしない
+  if(pendingLeaveIdx >= 0) return;
+  // 7回バトルしたメンバーを探す
+  for(let i=0;i<party.length;i++){
+    if(i===0) continue; // リーダーは脱退しない
+    const w=party[i];
+    if((w.battleCount||0)>=LEAVE_BATTLE_COUNT){
+      pendingLeaveIdx=i;
+      showLeaveModal(i);
+      return;
+    }
+  }
+}
+
+function showLeaveModal(idx){
+  const w=party[idx];
+  const modal=document.getElementById('modal-leave');
+  document.getElementById('leave-name').textContent=w.name;
+  document.getElementById('leave-part').textContent=`[${w.position||'?'}]`;
+  showModal('modal-leave');
+}
+
+function leaveYes(){
+  // 脱退させる
+  closeModal('modal-leave');
+  if(pendingLeaveIdx>=0){
+    const w=party[pendingLeaveIdx];
+    party.splice(pendingLeaveIdx,1);
+    if(selP1===pendingLeaveIdx) selP1=-1;
+    else if(selP1>pendingLeaveIdx) selP1--;
+    pendingLeaveIdx=-1;
+    saveAll();renderParty();
+    alert(`${w.name}がバンドを脱退した...`);
+  }
+}
+
+function leaveCalm(){
+  // なだめる（50%で失敗）
+  closeModal('modal-leave');
+  if(pendingLeaveIdx<0) return;
+  if(Math.random()<0.5){
+    // なだめ成功 → バトルカウントリセット
+    party[pendingLeaveIdx].battleCount=0;
+    pendingLeaveIdx=-1;
+    saveAll();renderParty();
+    const msg=document.getElementById('calm-result');
+    if(msg){msg.textContent='なだめに成功！';msg.style.color='var(--green)';}
+    setTimeout(()=>{if(msg)msg.textContent='';},2000);
+    alert('なんとかなだめることに成功した！でも、また7回バトルしたら...');
+  } else {
+    // なだめ失敗 → 脱退
+    const w=party[pendingLeaveIdx];
+    party.splice(pendingLeaveIdx,1);
+    if(selP1===pendingLeaveIdx) selP1=-1;
+    else if(selP1>pendingLeaveIdx) selP1--;
+    pendingLeaveIdx=-1;
+    saveAll();renderParty();
+    alert(`${w.name}はなだめても聞かず、バンドを脱退した...`);
+  }
 }
 
 // バトル1回終了後に全員の休憩カウントを-1する
@@ -1069,6 +1747,8 @@ function tickRestAll(){
 function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
   // EXP加算
+  // バトルカウント増加（リーダー以外）
+  party.forEach((w,i)=>{if(i!==0) w.battleCount=(w.battleCount||0)+1;});
   party[idx].exp=(party[idx].exp||0)+3;
   let levMsg='';
   while(party[idx].exp>=100){
@@ -1097,10 +1777,19 @@ function onVictory(push){
 }
 
 function showRecruitModal(p2, p1Idx){
-  // p1Idxが指定されていない場合はselP1を使う
   const pidx = (p1Idx !== undefined) ? p1Idx : selP1;
   const p1=party[pidx];
   if(!p1||!p2){resetBattle();return;}
+  // 70%の確率で断られる
+  if(Math.random()<0.7){
+    const log=document.getElementById('battle-log');
+    const s=document.createElement('span');
+    s.textContent=`\n${p2.name}「俺はお前らのバンドには興味ない」\n(スカウト失敗... 70%の壁は高い)\n`;
+    s.style.color='#886666';
+    log.appendChild(s);log.scrollTop=log.scrollHeight;
+    setTimeout(resetBattle,1500);
+    return;
+  }
   document.getElementById('rec-p1-name').textContent=p1.name;
   document.getElementById('rec-exp').textContent=`EXP: ${p1.exp||0}/100`;
   document.getElementById('rec-icon').textContent=p2.icon||'❓';
@@ -1115,12 +1804,20 @@ function recruitYes(){
   closeModal('modal-recruit');
   const w={...p2Warrior};
   if(w.special){w.lev=1+w.special.levBonus;for(let i=0;i<w.special.levBonus;i++){w.hp+=10;w.maxHp+=10;w.at+=3;w.df+=2;}}
-  // 5人以下なら直接追加、満員でも放出モーダルを表示
+  // Ba/Dr の重複チェック
+  const wPos = w.position;
+  if(wPos==='Ba'||wPos==='Dr'){
+    const count = party.filter(m=>m.position===wPos).length;
+    if(count>=1){
+      alert(`${wPos}はすでに1人います。${wPos}は1人しかバンドに入れません。`);
+      resetBattle();return;
+    }
+  }
   if(party.length<MAX_PARTY){
     party.push(w);saveAll();renderParty();resetBattle();
   } else {
-    p2Warrior=w; // 仮保存
-    showSwapModal(); // 誰かを放出してから追加
+    p2Warrior=w;
+    showSwapModal();
   }
 }
 function recruitNo(){closeModal('modal-recruit');resetBattle();}
