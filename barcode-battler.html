@@ -252,6 +252,7 @@ input:focus{outline:none;border-color:var(--red);}
     <div id="party-list"></div>
     <div id="band-bonus-display" style="margin-bottom:10px;"></div>
 <button class="btn btn-battle" id="btn-to-battle" onclick="showTab('battle')" disabled>🔥 ライブバトルへ</button>
+<button class="btn btn-ghost" onclick="disbandBand()" style="margin-top:4px;border-color:#440000;color:#884422;">💀 バンドを解散する</button>
   </div>
 
   <!-- SCAN -->
@@ -1216,7 +1217,7 @@ function goHome(){
 }
 function updateHomeInfo(){
   const el=document.getElementById('home-info');
-  if(party.length>0){const top=party.reduce((a,b)=>(b.lev||1)>(a.lev||1)?b:a);const bn=bandName?`${bandName} ／ `:'';el.innerHTML=`${bn}メンバー <span>${party.length}/${MAX_PARTY}人</span> ／ <span>${top.name} LEV${top.lev||1}</span>`;}
+  if(party.length>0){const top=party.reduce((a,b)=>(b.lev||1)>(a.lev||1)?b:a);const bn=bandName?`${bandName} ／ `:'';el.innerHTML=`${bn}メンバー <span>${party.length}/${MAX_PARTY}人</span>`;}
   else el.textContent='セーブデータなし';
 }
 
@@ -1230,24 +1231,23 @@ function showTab(id){
   renderParty();
 }
 function canBattleNow(){
-  // selP1が休憩中でないこと
-  if(selP1>=0 && getRestInfo(selP1)>0) return false;
-  return true;
+  // selP1が有効であること（休憩中でもバトル可能）
+  return selP1>=0 && party.length>0;
 }
 function updateCooldownHint(){
   const can=canBattleNow();
   const btn=document.getElementById('btn-scan-p2');
-  if(btn)btn.disabled=!can&&battleCnt>0;
+  if(btn)btn.disabled=!can;
   const msg=document.getElementById('cooldown-msg');
-  if(!can&&battleCnt>0){
-    const left=selP1>=0?getRestInfo(selP1):0;
-    msg.textContent=`選択中の戦士は休憩中です（残り${left}回）`;
-    msg.classList.remove('hidden');
-  } else {
-    msg.classList.add('hidden');
-  }
+  msg.classList.add('hidden');
 }
-function updateScanTab(){const f=party.length<=1;document.getElementById('scan-locked').classList.toggle('hidden',f);document.getElementById('scan-open').style.display=f?'block':'none';}
+function updateScanTab(){
+  // リーダー(0番)のみの場合はスキャン開放（バトル勝利でスカウト）
+  // ただし手動スキャン画面は常に閉じる（バトルで勝利してスカウトが基本）
+  const f=false; // スキャンタブは常にロック（バトル勝利でスカウト）
+  document.getElementById('scan-locked').classList.remove('hidden');
+  document.getElementById('scan-open').style.display='none';
+}
 
 // ===== PARTY =====
 // 戦士ごとの休憩残り回数を計算
@@ -1263,7 +1263,10 @@ function setRestForWarrior(i, required) {
 function renderParty(){
   // バンド名表示
   const bnEl=document.getElementById('band-name-display');
-  if(bnEl) bnEl.textContent=bandName?`★ ${bandName} ★`:'';
+  if(bnEl){
+    const memberInfo=party.length>0?` (${party.length}/${MAX_PARTY})` : '';
+    bnEl.textContent=bandName?`★ ${bandName}${memberInfo} ★`:'';
+  }
   const list=document.getElementById('party-list');list.innerHTML='';
   for(let i=0;i<MAX_PARTY;i++){
     const w=party[i],div=document.createElement('div');
@@ -1301,16 +1304,32 @@ function renderParty(){
         const used=usedBonuses.has(b.key)?'<span style="color:#888;font-size:8px;">（発動済）</span>':'<span style="color:#44ff44;font-size:8px;">★未発動</span>';
         return `<div style="font-size:10px;color:var(--gold);background:rgba(100,80,0,0.2);border:1px solid #664400;border-radius:5px;padding:5px 8px;margin-bottom:4px;">🎸 ${b.label}：${desc} ${used}</div>`;
       }).join('');
-    } else if(party.length===MAX_PARTY){
-      bbEl.innerHTML='<div style="font-size:9px;color:var(--dim);text-align:center;">同ジャンルで揃えるとバンドボーナス発動！</div>';
     } else {
-      bbEl.innerHTML=`<div style="font-size:9px;color:var(--dim);text-align:center;">あと${MAX_PARTY-party.length}人でバンド完成！</div>`;
+      // バンド編成状況チェック
+      const positions=party.map(w=>w.position||'');
+      const hasVo=positions.some(p=>p==='Vo'||p==='Vo/Gt');
+      const hasGt=positions.some(p=>p==='Gt'||p==='Vo/Gt');
+      const hasBa=positions.some(p=>p==='Ba'||p==='Vo/Ba');
+      const hasDr=positions.includes('Dr');
+      const isBandComplete=hasVo&&hasGt&&hasBa&&hasDr&&party.length===MAX_PARTY;
+      if(isBandComplete){
+        bbEl.innerHTML='<div style="font-size:9px;color:var(--green);text-align:center;border:1px solid var(--green);border-radius:4px;padding:4px;">🎸 バンド編成完了！</div>';
+      } else {
+        const missing=[];
+        if(!hasVo) missing.push('Vo');
+        if(!hasGt) missing.push('Gt');
+        if(!hasBa) missing.push('Ba');
+        if(!hasDr) missing.push('Dr');
+        const memberLeft=MAX_PARTY-party.length;
+        let statusMsg='';
+        if(memberLeft>0) statusMsg+=`あと${memberLeft}人必要。`;
+        if(missing.length>0) statusMsg+=`不足パート：${missing.join('/')}`;
+        bbEl.innerHTML=`<div style="font-size:9px;color:var(--dim);text-align:center;">${statusMsg}</div>`;
+      }
     }
   }
 }
 function selectP1(i){
-  const restLeft=getRestInfo(i);
-  if(restLeft>0){return;} // 休憩中は選択不可
   selP1=i;saveAll();renderParty();
 }
 function deleteWarrior(i){if(!confirm(`「${party[i].name}」を外しますか？`))return;party.splice(i,1);if(selP1===i)selP1=-1;else if(selP1>i)selP1--;saveAll();renderParty();updateScanTab();}
@@ -1861,6 +1880,18 @@ function showEnding(){
   const el=document.getElementById('ending-band-name');
   if(el) el.textContent=bandName?`★ ${bandName} ★`:'';
 }
+function disbandBand(){
+  if(!confirm('バンドを解散しますか？\nすべてのデータが消えて最初からやり直しになります。')) return;
+  party=[];selP1=-1;battleCnt=0;restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;
+  bandName='';heroName='';
+  restPerWarrior={};usedBonuses.clear();pendingLeaveIdx=-1;
+  saveAll();
+  // HOME画面に戻る
+  document.getElementById('s-main').style.display='none';
+  document.getElementById('s-home').style.display='flex';
+  updateHomeInfo();
+}
+
 function restartGame(){
   if(!confirm('データをリセットしますか？'))return;
   party=[];selP1=-1;battleCnt=0;restCnt=COOLDOWN_WIN;restRequired=COOLDOWN_WIN;saveAll();
