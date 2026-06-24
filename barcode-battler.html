@@ -298,7 +298,16 @@ input:focus{outline:none;border-color:var(--red);}
     <div id="cooldown-msg" class="msg msg-warn hidden"></div>
     <div id="p2-scan-area">
       <div class="card">
-        <div class="card-title">対戦相手のバーコードをスキャン</div>
+        <div class="card-title">対戦相手のバーコードを入力</div>
+        <input type="number" inputmode="numeric" id="p2-barcode-input"
+          placeholder="バーコード番号（6桁以上）"
+          style="width:100%;background:#08080f;border:1px solid #4444cc;border-radius:6px;padding:11px 12px;color:#aaaaff;font-size:15px;font-family:inherit;letter-spacing:2px;margin-bottom:8px;box-sizing:border-box;"/>
+        <button class="btn btn-secondary" onclick="submitP2Manual()">👾 対戦相手を召喚</button>
+        <div id="p2-msg" class="msg msg-info hidden"></div>
+        <div style="text-align:center;margin-top:4px;">
+          <button class="btn btn-ghost" id="btn-scan-p2" onclick="startScan('p2')" style="font-size:9px;padding:6px;margin-bottom:4px;">📷 カメラでスキャン（オプション）</button>
+          <button class="btn btn-ghost hidden" id="btn-stop-p2" onclick="stopScan('p2')" style="font-size:9px;padding:6px;">■ スキャン停止</button>
+        </div>
         <div class="cam-wrap" id="cam-p2">
           <video id="video-p2" playsinline autoplay muted></video>
           <div class="scan-guide"></div>
@@ -306,9 +315,6 @@ input:focus{outline:none;border-color:var(--red);}
           <div class="corner tl"></div><div class="corner tr"></div>
           <div class="corner bl"></div><div class="corner br"></div>
         </div>
-        <div id="p2-msg" class="msg msg-info hidden"></div>
-        <button class="btn btn-secondary" id="btn-scan-p2" onclick="startScan('p2')">📷 対戦相手をスキャン</button>
-        <button class="btn btn-ghost hidden" id="btn-stop-p2" onclick="stopScan('p2')">■ スキャン停止</button>
       </div>
     </div>
     <div class="arena hidden" id="arena">
@@ -1510,6 +1516,27 @@ function addFirstWarrior(){
 function resetScan(){stopScan('p1');pendingW=null;document.getElementById('w-preview').classList.remove('show');const m=document.getElementById('scan-msg');m.classList.add('hidden');}
 
 // ===== ARENA =====
+function submitP2Manual(){
+  if(!canBattleNow()){
+    alert('先にバンド画面でメンバーを選択してください');
+    showTab('party');return;
+  }
+  const input=document.getElementById('p2-barcode-input');
+  const code=(input?input.value:'').toString().trim();
+  if(code.length<6){
+    showMsg('p2-msg','6桁以上の数字を入力してください','warn');return;
+  }
+  const stats=calcStats(code,true);
+  if(!stats){
+    showMsg('p2-msg','バーコードが読み取れませんでした','warn');return;
+  }
+  p2Warrior=stats;
+  p2MaxHp=0; // リセット
+  if(input) input.value='';
+  showMsg('p2-msg',`${stats.name} [${stats.position}] 登場！`+(stats.isBoss?' 👑BOSS':''),'ok');
+  setupArena();
+}
+
 function setupArena(){
   if(!p2Warrior||selP1<0)return;
   currentFighterIdx=selP1;
@@ -1867,6 +1894,7 @@ function cancelSwap(){closeModal('modal-swap');resetBattle();}
 function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 function resetBattle(){
   _battling=false;stopAllScan();p2Warrior=null;p2MaxHp=0;currentFighterIdx=selP1;
+  const inp=document.getElementById('p2-barcode-input');if(inp)inp.value='';
   document.getElementById('p2-scan-area').classList.remove('hidden');
   document.getElementById('arena').classList.add('hidden');
   document.getElementById('p2-msg').classList.add('hidden');
