@@ -1291,6 +1291,8 @@ function getRestInfo(i) {
   return restPerWarrior[String(i)] || 0;
 }
 function setRestForWarrior(i, required) {
+  // メンバーが1人の時は休憩なし
+  if(party.length<=1) return;
   restPerWarrior[String(i)] = required;
   saveAll();
 }
@@ -1816,6 +1818,8 @@ function leaveCalm(){
 
 // バトル1回終了後に全員の休憩カウントを-1する
 function tickRestAll(){
+  // メンバーが1人の時は休憩なし
+  if(party.length<=1) return;
   Object.keys(restPerWarrior).forEach(k=>{
     if(restPerWarrior[k]>0) restPerWarrior[k]--;
     if(restPerWarrior[k]<=0) delete restPerWarrior[k];
