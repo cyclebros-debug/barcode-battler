@@ -457,8 +457,17 @@ input:focus{outline:none;border-color:var(--red);}
 
 <script>
 // ===== CONFIG =====
-const MAX_PARTY=4, COOLDOWN_WIN=1, COOLDOWN_LOSE=3, BOSS_THRESHOLD=7, FLASH_BIG=40;
+const MAX_PARTY=4, COOLDOWN_WIN=1, COOLDOWN_LOSE=2, BOSS_THRESHOLD=7, FLASH_BIG=40;
 const POSITIONS=['Vo','Gt','Ba','Dr'];
+
+// 対戦相手バンド名生成用
+const BAND_PREFIX=['Dark','Iron','Black','Thunder','Crimson','Shadow','Steel','Death','Blood','Fire','Savage','Wicked','Brutal','Raging','Wild'];
+const BAND_SUFFIX=['Sabbath','Angels','Demons','Wolves','Ravens','Knights','Machine','Riders','Force','Storm','Hammer','Cross','Fire','Snake','Legion'];
+function randomBandName(seed){
+  const p=BAND_PREFIX[seed%BAND_PREFIX.length];
+  const s=BAND_SUFFIX[Math.floor(seed/BAND_PREFIX.length)%BAND_SUFFIX.length];
+  return p+' '+s;
+}
 // パート別人物アイコン（人の顔）
 const PART_ICONS={
   'Vo':'🧑‍🎤',
@@ -1161,6 +1170,21 @@ function calcStats(code,isP2){
   const rb=RARE_BONUS[rarity];
   hp+=rb.hp; at+=rb.at; df+=rb.df;
 
+  // ハンデキャップ制：メンバー人数に応じて敵を調整
+  const memberCount = party.length || 1;
+  const handicap = memberCount === 1 ? 0.5  // 1人：敵が50%の強さ
+                 : memberCount === 2 ? 0.7  // 2人：敵が70%の強さ
+                 : memberCount === 3 ? 0.85 // 3人：敵が85%の強さ
+                 : 1.0;                     // 4人：通常の強さ
+  // 練習バトル：最初の3回はストリートライブ（敵が弱い）
+  const isPractice = isP2 && battleCnt < 3;
+  const finalHandicap = isPractice ? 0.35 : (isP2 ? handicap : 1.0);
+  if(isP2 && finalHandicap < 1.0){
+    hp = Math.max(30, Math.round(hp * finalHandicap));
+    at = Math.max(8,  Math.round(at * finalHandicap));
+    df = Math.max(5,  Math.round(df * finalHandicap));
+  }
+
   // ボス判定
   let isBoss=false;
   if(isP2&&(parseInt(d.slice(-2))||0)<=BOSS_THRESHOLD){
@@ -1201,10 +1225,13 @@ function calcStats(code,isP2){
   genre=GENRES[genreIdx];
 
   const special=calcSpecial(d);
+  // 対戦相手のバンド名生成
+  const enemyBandName = isP2 ? randomBandName(parseInt(d.slice(-5))||0) : bandName;
   return{hp,maxHp:hp,at,df,rarity,name,icon,
     isFemale:false,position,genre,
     lev:1,exp:0,code:d,special,isBoss,
-    battleCount:0,absentCount:0};
+    battleCount:0,absentCount:0,
+    enemyBandName};
 }
 
 // ===== SCREEN =====
@@ -1230,7 +1257,7 @@ function confirmHeroName(){
   heroName=name;
   bandName=band;
   // リーダー自身をパーティ0番に追加
-  const leaderStats={hp:120,maxHp:120,at:30,df:20,rarity:'R',
+  const leaderStats={hp:180,maxHp:180,at:45,df:30,rarity:'R',
     name:heroName,icon:'🎸',isFemale:false,
     position:selectedPart,genre:'LAメタル',
     lev:1,exp:0,code:'0000000',special:null,isBoss:false};
@@ -1624,7 +1651,8 @@ async function executeBattle(){
   const p1Max=p1.hp;
   let p2={...p2Warrior};
   log.textContent='';
-  push(`${p1.name} VS ${p2.name}！`);await sleep(600);
+  push(`${p1.name} [${party[currentFighterIdx]?.position||'?'}] VS ${p2.name} [${p2.position||'?'}]`);
+  if(p2.enemyBandName) push(`${bandName||''} vs ${p2.enemyBandName}`,'#888');await sleep(600);
   let round=1;
   while(p1.hp>0&&p2.hp>0&&round<=30&&_battling){
     push(`\n-- ROUND ${round} --`);await sleep(350);
@@ -1839,10 +1867,14 @@ function onVictory(push){
       w.absentCount=(w.absentCount||0)+1; // 不参加カウント+1
     }
   });
+  // 勝利ボーナス：HP+3、AT+1、DF+1
+  party[idx].hp = Math.min(party[idx].maxHp, (party[idx].hp||0)+3);
+  party[idx].at = (party[idx].at||0)+1;
+  party[idx].df = (party[idx].df||0)+1;
   party[idx].exp=(party[idx].exp||0)+3;
   let levMsg='';
   while(party[idx].exp>=20){
-    party[idx].exp-=100;
+    party[idx].exp-=20;
     party[idx].lev=(party[idx].lev||1)+1;
     party[idx].hp+=10;party[idx].maxHp+=10;
     party[idx].at+=3;party[idx].df+=2;
