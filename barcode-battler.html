@@ -1293,7 +1293,6 @@ function showTab(id){
   renderParty();
 }
 function canBattleNow(){
-  // selP1が有効であること（休憩中でもバトル可能）
   return selP1>=0 && party.length>0;
 }
 function updateCooldownHint(){
@@ -1345,10 +1344,8 @@ function renderParty(){
       const restBadge = isResting
         ? `<span class="rest-badge">休憩中 残り${restLeft}回</span>`
         : '';
-      const absent = w.absentCount||0;
-      const absentBadge = (i!==0&&absent>0)
-        ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;${absent>=5?'background:#2a0000;color:#ff6644;border:1px solid #ff4422;':'background:#1a1000;color:#aa6622;'}margin-top:2px;">不参加:${absent}/7回</span>`
-        : '';
+      // 不参加回数は非表示（突然の脱退申し出を演出）
+      const absentBadge = '';
       const posBadge = w.position ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#001a33;color:#44aaff;border:1px solid #224466;margin-left:3px;">${w.position}</span>` : '';
       const genreBadge = w.genre ? `<span style="display:inline-block;font-size:7px;padding:1px 4px;border-radius:2px;background:#1a0033;color:#aa44ff;margin-left:2px;">${w.genre}</span>` : '';
       div.innerHTML=`<div class="slot-lev">LEV${w.lev||1}</div><div class="slot-portrait">${w.icon||'🎸'}</div><div class="slot-info"><div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;flex-wrap:wrap;"><span class="rare-badge ${RC_CLS[w.rarity]}">${w.rarity}</span>${posBadge}${genreBadge}</div><div class="slot-name">${w.name}</div><div style="font-size:8px;color:#605850;margin-bottom:1px;">${bandName||''}</div>${restBadge}${absentBadge}<div class="slot-stats">HP:${w.hp} AT:${w.at} DF:${w.df}</div><div class="slot-stats" style="color:#888">EXP:${w.exp||0}/20</div><div class="exp-bar-wrap"><div class="exp-bar" style="width:${ep}%"></div></div></div><button class="slot-del" onclick="event.stopPropagation();deleteWarrior(${i})" style="font-size:10px;color:#882222;">クビ</button>`;
@@ -1701,7 +1698,9 @@ async function fleeBattle(){
   tickRestAll();
   setRestForWarrior(currentFighterIdx,COOLDOWN_WIN);
   battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;saveAll();renderParty();updateCooldownHint();
-  await sleep(600);resetBattle();
+  await sleep(2000);
+  showTab('party');
+  resetBattle();
 }
 
 function showDefeatModal(enemyName,enemyHp){
