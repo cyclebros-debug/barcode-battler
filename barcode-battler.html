@@ -460,6 +460,28 @@ input:focus{outline:none;border-color:var(--red);}
 const MAX_PARTY=4, COOLDOWN_WIN=1, COOLDOWN_LOSE=2, BOSS_THRESHOLD=7, FLASH_BIG=40;
 const POSITIONS=['Vo','Gt','Ba','Dr'];
 
+// 知名度・活動年数を考慮したBOSSミュージシャンリスト
+const BOSS_MUSICIANS = [
+  // 超レジェンド（最強クラス）
+  {name:'ジェイムズ・ヘットフィールド',part:'Vo/Gt',power:100},
+  {name:'ロブ・ハルフォード',part:'Vo',power:100},
+  {name:'ロニー・ジェイムス・ディオ',part:'Vo',power:100},
+  {name:'オジー・オズボーン',part:'Vo',power:95},
+  {name:'ブルース・ディッキンソン',part:'Vo',power:95},
+  {name:'レミー・キルミスター',part:'Vo/Ba',power:95},
+  {name:'アンガス・ヤング',part:'Gt',power:95},
+  {name:'エディ・ヴァン・ヘイレン',part:'Gt',power:95},
+  {name:'ランディ・ローズ',part:'Gt',power:90},
+  {name:'イングヴェイ・マルムスティーン',part:'Gt',power:90},
+  {name:'デイヴ・ムステイン',part:'Vo/Gt',power:90},
+  {name:'トム・アラヤ',part:'Vo/Ba',power:88},
+  {name:'ダイムバッグ・ダレル',part:'Gt',power:92},
+  {name:'クリス・コーネル',part:'Vo',power:90},
+  {name:'アクセル・ローズ',part:'Vo',power:88},
+  {name:'カーク・ハメット',part:'Gt',power:88},
+  {name:'ラーズ・ウルリッヒ',part:'Dr',power:85},
+];
+
 // 対戦相手バンド名生成用
 const BAND_PREFIX=['Dark','Iron','Black','Thunder','Crimson','Shadow','Steel','Death','Blood','Fire','Savage','Wicked','Brutal','Raging','Wild'];
 const BAND_SUFFIX=['Sabbath','Angels','Demons','Wolves','Ravens','Knights','Machine','Riders','Force','Storm','Hammer','Cross','Fire','Snake','Legion'];
@@ -1185,14 +1207,20 @@ function calcStats(code,isP2){
     df = Math.max(5,  Math.round(df * finalHandicap));
   }
 
-  // ボス判定
+  // ボス判定（末尾2桁<=7 約7%）
   let isBoss=false;
   if(isP2&&(parseInt(d.slice(-2))||0)<=BOSS_THRESHOLD){
     isBoss=true;
-    const m=1.5+(seed%100)/66.7;
-    hp=Math.min(500,Math.round(hp*m));
-    at=Math.min(200,Math.round(at*m));
-    df=Math.min(200,Math.round(df*m));
+    // BOSS_MUSICIANSから選出
+    const bossIdx=parseInt(d.slice(-4))%BOSS_MUSICIANS.length;
+    const boss=BOSS_MUSICIANS[bossIdx];
+    name='[BOSS]'+boss.name;
+    position=boss.part==='Vo/Gt'?'Gt':boss.part==='Vo/Ba'?'Ba':boss.part;
+    // 知名度(power)に応じてステータスを設定
+    const pow=boss.power/100;
+    hp=Math.min(500,Math.round(150+hp*pow*1.5));
+    at=Math.min(200,Math.round(50+at*pow*1.2));
+    df=Math.min(200,Math.round(30+df*pow));
   }
 
   let name,icon,position,genre;
@@ -1610,6 +1638,10 @@ function setupArena(){
 function setBattlePhase(phase){
   document.getElementById('btn-area-pre').style.display=phase==='pre'?'grid':'none';
   document.getElementById('btn-area-fighting').style.display=phase==='fighting'?'block':'none';
+  if(phase==='pre'){
+    const btn=document.getElementById('btn-battle-start');
+    if(btn) btn.disabled=false;
+  }
 }
 function updateFighterBar(){const w=party[currentFighterIdx];if(!w)return;document.getElementById('current-fighter-bar').textContent=`出撃中: ${w.name} (LEV${w.lev||1}) [${currentFighterIdx+1}/${party.length}人目]`;}
 function setFighter(side,w,hp,maxHp){
@@ -1648,8 +1680,8 @@ async function executeBattle(){
   const p1Max=p1.hp;
   let p2={...p2Warrior};
   log.textContent='';
-  push(`${p1.name} [${party[currentFighterIdx]?.position||'?'}] VS ${p2.name} [${p2.position||'?'}]`);
-  if(p2.enemyBandName) push(`${bandName||''} vs ${p2.enemyBandName}`,'#888');await sleep(600);
+  push(`${bandName||'あなたのバンド'} vs ${p2.enemyBandName||'Unknown Band'}`,'#888');
+  push(`${p1.name} [${party[currentFighterIdx]?.position||'?'}] VS ${p2.name} [${p2.position||'?'}]`);await sleep(600);
   let round=1;
   while(p1.hp>0&&p2.hp>0&&round<=30&&_battling){
     push(`\n-- ROUND ${round} --`);await sleep(350);
@@ -1676,7 +1708,7 @@ async function executeBattle(){
   if(p2.hp<=0){
     push(`${p2.name} を倒した！`,'var(--gold)');await sleep(400);
     battleCnt++;restCnt=0;restRequired=COOLDOWN_WIN;
-    setBattlePhase('pre');onVictory(push);
+    setBattlePhase('pre');await onVictory(push);
   } else {
     push(`${p1.name} は倒れた！`,'#ff4444');await sleep(600);
     p2Warrior.hp=p2.hp;
@@ -1854,22 +1886,18 @@ function tickRestAll(){
   saveAll();
 }
 
-function onVictory(push){
+async function onVictory(push){
   const idx=currentFighterIdx<party.length?currentFighterIdx:selP1;
-  // EXP加算
-  // 参加したメンバーの不参加カウントをリセット、参加しなかったメンバーは+1
+  // 不参加カウント更新
   party.forEach((w,i)=>{
-    if(i===0) return; // リーダーは対象外
-    if(i===idx){
-      w.absentCount=0; // 参加したのでリセット
-    } else {
-      w.absentCount=(w.absentCount||0)+1; // 不参加カウント+1
-    }
+    if(i===0) return;
+    if(i===idx) w.absentCount=0;
+    else w.absentCount=(w.absentCount||0)+1;
   });
-  // 勝利ボーナス：HP+3、AT+1、DF+1
-  party[idx].hp = Math.min(party[idx].maxHp, (party[idx].hp||0)+3);
-  party[idx].at = (party[idx].at||0)+1;
-  party[idx].df = (party[idx].df||0)+1;
+  // 勝利ボーナス
+  party[idx].hp=Math.min(party[idx].maxHp,(party[idx].hp||0)+3);
+  party[idx].at=(party[idx].at||0)+1;
+  party[idx].df=(party[idx].df||0)+1;
   party[idx].exp=(party[idx].exp||0)+3;
   let levMsg='';
   while(party[idx].exp>=20){
@@ -1880,22 +1908,24 @@ function onVictory(push){
     levMsg+=`\nLEVEL UP! LEV${party[idx].lev}`;
     push(levMsg,'var(--purple)');
     if(party[idx].lev>=10){
-      // バトル終了処理
-      tickRestAll();
-      setRestForWarrior(idx,COOLDOWN_WIN);
-      selP1=idx;
+      tickRestAll();setRestForWarrior(idx,COOLDOWN_WIN);selP1=idx;
       saveAll();renderParty();
-      setTimeout(showEnding,800);return;
+      await sleep(2000);
+      showEnding();return;
     }
   }
-  // バトル終了処理（休憩はここでセット）
-  tickRestAll();
-  setRestForWarrior(idx,COOLDOWN_WIN);
-  selP1=idx;
+  // 休憩セット・保存
+  tickRestAll();setRestForWarrior(idx,COOLDOWN_WIN);selP1=idx;
   saveAll();renderParty();updateCooldownHint();
-  // 必ず仲間にするか確認（idxを直接渡す）
-  showRecruitModal(p2Warrior, idx);
+  // 2秒停止→バンド画面へ
+  await sleep(2000);
+  showTab('party');
+  await sleep(200);
+  // 脱退チェック→スカウトモーダル
+  checkLeaveRequest();
+  if(pendingLeaveIdx<0&&p2Warrior) showRecruitModal(p2Warrior,idx);
 }
+
 
 function showRecruitModal(p2, p1Idx){
   const pidx = (p1Idx !== undefined) ? p1Idx : selP1;
@@ -1957,7 +1987,8 @@ function doSwap(i){
 function cancelSwap(){closeModal('modal-swap');resetBattle();}
 function closeDefeat(){closeModal('modal-defeat');resetBattle();}
 function resetBattle(){
-  _battling=false;stopAllScan();p2Warrior=null;p2MaxHp=0;currentFighterIdx=selP1;
+  _battling=false;stopAllScan();p2Warrior=null;p2MaxHp=0;
+  currentFighterIdx=selP1>=0?selP1:0;
   const inp=document.getElementById('p2-barcode-input');if(inp)inp.value='';
   document.getElementById('p2-scan-area').classList.remove('hidden');
   document.getElementById('arena').classList.add('hidden');
